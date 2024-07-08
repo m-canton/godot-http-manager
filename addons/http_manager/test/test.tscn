@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://cydv7wnl2j7mh"]
 
 [ext_resource type="Script" path="res://addons/http_manager/test/test.gd" id="1_ueaph"]
-[ext_resource type="Script" path="res://addons/http_manager/http_manager/http_manager.gd" id="2_qemrv"]
+[ext_resource type="Script" path="res://addons/http_manager/node/http_manager.gd" id="2_qemrv"]
 
 [node name="test" type="Node"]
 script = ExtResource("1_ueaph")

@@ -13,6 +13,7 @@ config_version=5
 config/name="HTTP Manager"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 config/icon="res://icon.svg"
+config/tags=PackedStringArray("network", "plugin")
 
 [editor_plugins]
 
