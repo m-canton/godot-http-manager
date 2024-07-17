@@ -1,9 +1,12 @@
-class_name HTTPManagerResponse extends Node
+class_name HTTPManagerResponse extends RefCounted
 
 var data: PackedByteArray
 var error_code := 0
 var error_message := ""
 var headers := PackedStringArray()
+
+#var _headers_are_parsed := false
+#var _content_type_is_parsed := false
 
 
 func has_error() -> bool:
@@ -29,6 +32,11 @@ func get_content_type() -> Dictionary:
 					dict[array[0].strip_edges()] = array[1].strip_edges()
 			return dict
 	return {}
+
+
+func _parse_headers() -> Error:
+	push_error("This method is not implemented yet.")
+	return FAILED
 
 
 func parse() -> Variant:
