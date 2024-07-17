@@ -12,17 +12,59 @@ extends Node
 ##         request_data.request_completed(_on_a_request_completed)
 ## [/codeblock]
 
+enum HTTPClientMeta {
+	REQUEST,
+	RESPONSE,
+}
+
+const HTTP_CLIENT_META_REQUEST := &"request"
+const HTTP_CLIENT_META_RESPONSE := &"response"
 
 var _clients: Array[HTTPManagerClient] = []
 var _http_clients: Array[HTTPClient] = []
 
-var _active_http_requests: Array[HTTPRequest] = []
-
 
 func _process(delta: float) -> void:
+	for hc in _http_clients:
+		var _error := hc.poll()
+		var status := hc.get_status()
+		if status == HTTPClient.STATUS_BODY:
+			print("body")
+			var r: HTTPManagerResponse = hc.get_meta(HTTP_CLIENT_META_RESPONSE)
+			var chunk := hc.read_response_body_chunk()
+			if not chunk.is_empty():
+				r.body.append_array(chunk)
+		elif status == HTTPClient.STATUS_REQUESTING:
+			hc.set_meta("requesting", true)
+			print("requesting...")
+		elif status == HTTPClient.STATUS_CONNECTING:
+			print("connecting...")
+		elif status == HTTPClient.STATUS_CONNECTED:
+			if hc.get_meta("requesting", false):
+				_on_success(hc)
+			else:
+				var r: HTTPManagerRequest = hc.get_meta(HTTP_CLIENT_META_REQUEST)
+				hc.request(r.route.method, r.route.endpoint, r.headers, r.body)
+		elif status == HTTPClient.STATUS_RESOLVING:
+			print("resolving...")
+			pass
+		elif status == HTTPClient.STATUS_DISCONNECTED:
+			print("disconnected")
+			_on_success(hc)
+		elif status == HTTPClient.STATUS_TLS_HANDSHAKE_ERROR:
+			push_error("tls handshake error...")
+			_on_failure(hc)
+		elif status == HTTPClient.STATUS_CONNECTION_ERROR:
+			push_error("connection error")
+			_on_failure(hc)
+		elif status == HTTPClient.STATUS_CANT_CONNECT:
+			push_error("cant connect")
+			_on_failure(hc)
+		elif status == HTTPClient.STATUS_CANT_RESOLVE:
+			push_error("cant resolve")
+			_on_failure(hc)
+	
 	for c in _clients:
-		c.clients
-		
 		for key in c.countdowns:
 			c[key] -= delta
 			if c[key] <= 0.0:
@@ -33,7 +75,7 @@ func _process(delta: float) -> void:
 ## is [code]null[/code], it cancels all the clients.
 func cancel_all(c: HTTPManagerClient) -> void:
 	for hc in _http_clients:
-		if not c or hc.get_meta("request").route.client == c:
+		if not c or hc.get_meta(HTTP_CLIENT_META_REQUEST).route.client == c:
 			hc.close()
 	
 	for c2 in _clients:
@@ -42,7 +84,7 @@ func cancel_all(c: HTTPManagerClient) -> void:
 
 ## Removes a request from queue or closes the [HTTPClient] that is requesting
 ## it.
-func cancel(r: HTTPManagerRequest, close_connection := false) -> void:
+func cancel(r: HTTPManagerRequest) -> void:
 	for hc in _http_clients:
 		if hc.get_meta("request") == r:
 			hc.close()
@@ -51,26 +93,6 @@ func cancel(r: HTTPManagerRequest, close_connection := false) -> void:
 	var i = r.route.client._queue.find(r)
 	if i != -1:
 		r.route.client._queue.remove_at(i)
-
-
-func query_string_from_dict(dict: Dictionary) -> String:
-	var query := "";
-	for key in dict:
-		var encoded_key = key.uri_encode()
-		var value = dict[key]
-		match typeof(value):
-			TYPE_ARRAY:
-				# Repeat the key with every values
-				var values: Array = value
-				for v in values:
-					query += "&" + encoded_key + "=" + v.uri_encode();
-			TYPE_NIL:
-				# Add the key with no value
-				query += "&" + encoded_key;
-			_:
-				# Add the key-value pair
-				query += "&" + encoded_key + "=" + str(value).uri_encode();
-	return query.substr(1);
 
 
 func request(r: HTTPManagerRequest) -> void:
@@ -84,50 +106,47 @@ func request(r: HTTPManagerRequest) -> void:
 		push_error("Request route has null client.")
 		return
 	
-	client.queue_request(r)
+	client.queue(r)
+	_next(r.route.client)
 
 
-func _can_request(url: String) -> bool:
-	for key in _rate_limited_domains:
-		if url.begins_with(key):
-			var timer: Timer = _rate_limited_domains[key]
-			if timer.is_stopped():
-				timer.start()
-				return true
-			return false
-	return true
+func _next(c: HTTPManagerClient) -> Error:
+	if not c.can_next():
+		return OK
+	
+	var r := c.next()
+	if not r:
+		return OK
+	
+	var hc := HTTPClient.new()
+	
+	var error := hc.connect_to_host(r.route.client.host, r.route.client.port, r.route.client.tls_options)
+	if error:
+		push_error(error_string(error))
+		return error
+	
+	hc.set_meta(HTTP_CLIENT_META_REQUEST, r)
+	hc.set_meta(HTTP_CLIENT_META_RESPONSE, HTTPManagerResponse.new())
+	_http_clients.append(hc)
+	
+	return OK
 
 
-func _next(c: HTTPManagerClient) -> void:
-	if not _active_http_requests.is_empty():
-		for i in range(_queue.size()):
-			var request: HTTPManagerRequest = _queue[i]
-			if not _can_request(request.url):
-				continue
-
-			var http_request: HTTPRequest = _active_http_requests.pop_back()
-			add_child(http_request)
-			_active_requests[http_request] = request
-			if http_request.request(request.url, request.headers, request.method, request.request_data) == OK:
-				break
-
-			_active_requests.erase(http_request)
-			remove_child(http_request)
-			_active_http_requests.append(http_request)
-
-			var response := HTTPManagerResponse.new()
-			response.error_message = "Request Error"
-			request.request_completed.emit(response)
+func _on_failure(http_client: HTTPClient) -> void:
+	_http_clients.erase(http_client)
+	var r: HTTPManagerResponse = http_client.get_meta(HTTP_CLIENT_META_RESPONSE)
+	r.code = http_client.get_response_code() as HTTPClient.ResponseCode
+	push_error("Request error with code:", r.code)
+	http_client.get_meta(HTTP_CLIENT_META_REQUEST).complete(r)
 
 
-func _on_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray) -> void:
-	var r: HTTPManagerRequest = _active_requests[http_request]
-	_active_requests.erase(http_request)
-	remove_child(http_request)
-	_active_http_requests.append(http_request)
-
-	var response := HTTPManagerResponse.new()
-	response.data = body
-	response.headers = headers
-	r.completed.emit(response)
+func _on_success(http_client: HTTPClient) -> void:
+	_http_clients.erase(http_client)
+	
+	var r: HTTPManagerRequest = http_client.get_meta(HTTP_CLIENT_META_REQUEST)
+	var response: HTTPManagerResponse = http_client.get_meta(HTTP_CLIENT_META_RESPONSE)
+	response.code = http_client.get_response_code() as HTTPClient.ResponseCode
+	response.headers = http_client.get_response_headers_as_dictionary()
+	r.complete(response)
+	
 	_next(r.route.client)

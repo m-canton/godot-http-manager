@@ -1,18 +1,27 @@
 class_name HTTPManagerClient extends Resource
 
 
-## API host or base url.
+## Host or base url.
 @export var host := ""
+## Port.
+@export var port := -1
+## Requests per second.
 @export_range(0, 10, 1, "or_greater") var requests_per_second := 1.0
+## Maximum concurrent requests.
+@export_range(0, 10, 1, "or_greater") var max_concurrent_requests := 1
 ## Headers that are added when request starts with this client.
 @export var headers := PackedStringArray()
-## Priority.
+## Priority. It does nothing yet.
 @export var priority := 0
 
+var tls_options: TLSOptions
+
+## See [HTTPManager._next].
 var http_client_count := 0
+## See [HTTPManagerClient.request_per_second].
 var countdowns := {}
 
-
+##
 var _queue: Array[HTTPManagerRequest] = []
 var _pop_order := false:
 	set(value):
@@ -25,7 +34,7 @@ func clear() -> void:
 	_queue.clear()
 
 
-func queue_request(r: HTTPManagerRequest) -> void:
+func queue(r: HTTPManagerRequest) -> void:
 	if _pop_order:
 		_pop_order = false
 	
@@ -44,11 +53,15 @@ func queue_request(r: HTTPManagerRequest) -> void:
 		_queue.append(r)
 
 
-func next_request() -> HTTPManagerRequest:
+func next() -> HTTPManagerRequest:
 	if not _pop_order:
 		_pop_order = true
 	return _queue.pop_front()
 
 
-func remove_request() -> bool:
-	return false
+func can_next() -> bool:
+	return http_client_count < max_concurrent_requests and countdowns.is_empty()
+
+
+func is_empty() -> bool:
+	return _queue.is_empty()

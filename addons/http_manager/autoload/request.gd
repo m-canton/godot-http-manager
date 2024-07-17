@@ -12,6 +12,8 @@ var priority := -1
 var headers := PackedStringArray()
 ## Authentication.
 var use_auth := false
+## Body.
+var body := ""
 
 
 func _init(r: HTTPManagerRoute) -> void:
@@ -24,9 +26,6 @@ func _init(r: HTTPManagerRoute) -> void:
 	headers.append_array(r.client.headers)
 
 
-func get_url() -> void:
-	var query_string := _query_dict_to_string(query)
-
 
 func complete(response: HTTPManagerResponse) -> void:
 	completed.emit(response)
@@ -34,7 +33,7 @@ func complete(response: HTTPManagerResponse) -> void:
 
 func _query_dict_to_string(dict: Dictionary, prefix := "") -> String:
 	var s := ""
-	var first := true
+	var _first := true
 	for key in dict:
 		var value = dict[key]
 		if value is Dictionary:
@@ -49,7 +48,7 @@ func _query_dict_to_string(dict: Dictionary, prefix := "") -> String:
 	return s
 
 
-func _query_array_to_string(array: Array) -> String:
+func _query_array_to_string(_array: Array) -> String:
 	var s := ""
 	return s
 
@@ -59,7 +58,7 @@ func with_basic_auth(username: String, password: String) -> void:
 	_with_auth("Basic " + Marshalls.utf8_to_base64(username + ":" + password))
 
 ## Adds Basic Authentication header. Not implementet yet.
-func with_diggest_auth(username: String, password: String) -> void:
+func with_diggest_auth(_username: String, _password: String) -> void:
 	push_error("Not implemented yet.")
 
 

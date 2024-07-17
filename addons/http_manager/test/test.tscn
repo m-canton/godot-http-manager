@@ -4,3 +4,5 @@
 
 [node name="test" type="Node"]
 script = ExtResource("1_ueaph")
+
+[node name="HTTPRequest" type="HTTPRequest" parent="."]
