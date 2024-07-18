@@ -11,10 +11,9 @@ class_name HTTPManagerClient extends Resource
 @export_range(0, 10, 1, "or_greater") var max_concurrent_requests := 1
 ## Headers that are added when request starts with this client.
 @export var headers := PackedStringArray()
-## Priority. It does nothing yet.
+## Priority in HTTPManager to make requests.[br]
+## [b]Note: [/b] It does nothing yet.
 @export var priority := 0
-
-var tls_options: TLSOptions
 
 ## See [HTTPManager._next].
 var http_client_count := 0

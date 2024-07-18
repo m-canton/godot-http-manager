@@ -44,7 +44,7 @@ func _process(delta: float) -> void:
 				_on_success(hc)
 			else:
 				var r: HTTPManagerRequest = hc.get_meta(HTTP_CLIENT_META_REQUEST)
-				hc.request(r.route.method, r.route.endpoint, r.headers, r.body)
+				hc.request(r.route.method as HTTPClient.Method, r.route.endpoint, r.headers, r.body)
 		elif status == HTTPClient.STATUS_RESOLVING:
 			print("resolving...")
 			pass
@@ -120,7 +120,7 @@ func _next(c: HTTPManagerClient) -> Error:
 	
 	var hc := HTTPClient.new()
 	
-	var error := hc.connect_to_host(r.route.client.host, r.route.client.port, r.route.client.tls_options)
+	var error := hc.connect_to_host(r.route.client.host, r.route.client.port, r.tls_options)
 	if error:
 		push_error(error_string(error))
 		return error
