@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="HTTPManagerClient" load_steps=7 format=3 uid="uid://cexni4twjdr5a"]
+
+[ext_resource type="Script" path="res://addons/http_manager/autoload/contraints/set.gd" id="1_ltvgo"]
+[ext_resource type="Script" path="res://addons/http_manager/autoload/client.gd" id="2_qtk8e"]
+[ext_resource type="Script" path="res://addons/http_manager/autoload/contraints/constraint.gd" id="2_sdnji"]
+[ext_resource type="Script" path="res://addons/http_manager/autoload/contraints/request.gd" id="3_8jpso"]
+
+[sub_resource type="Resource" id="Resource_q8bal"]
+script = ExtResource("3_8jpso")
+requests = 1
+seconds = 1.0
+methods = Array[int]([])
+
+[sub_resource type="Resource" id="Resource_8aww1"]
+script = ExtResource("1_ltvgo")
+constraints = Array[ExtResource("2_sdnji")]([SubResource("Resource_q8bal")])
+
+[resource]
+script = ExtResource("2_qtk8e")
+host = "https://api.restful-api.dev"
+port = -1
+max_concurrent_requests = 1
+headers = []
+priority = 0
+constraint_current_set = 0
+constraint_sets = Array[ExtResource("1_ltvgo")]([SubResource("Resource_8aww1")])
+url_param_bool_true = "1"
+url_param_bool_false = "0"
+url_param_array = 0

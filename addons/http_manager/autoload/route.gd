@@ -4,9 +4,12 @@ class_name HTTPManagerRoute extends Resource
 ## 
 ## Defines a client route to use with HTTPManagerRequest.
 
+## JSON MIME type.
 const MIMETYPE_JSON := "application/json"
+## Url encoded MIME type.
 const MIMETYPE_URL_ENCODED := "application/x-www-form-urlencoded"
 
+## Method enums. See [enum HTTPClient.Method].
 enum Method {
 	GET,
 	HEAD,
@@ -27,5 +30,5 @@ enum Method {
 @export var headers := PackedStringArray()
 ## Method for this route.
 @export var method := Method.GET
-@export_multiline var request_data := ""
+## Request priority. Lower values are first in the client queue.
 @export var priority := 0

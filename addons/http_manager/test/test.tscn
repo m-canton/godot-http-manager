@@ -2,7 +2,36 @@
 
 [ext_resource type="Script" path="res://addons/http_manager/test/test.gd" id="1_ueaph"]
 
-[node name="test" type="Node"]
+[node name="test" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_ueaph")
 
-[node name="HTTPRequest" type="HTTPRequest" parent="."]
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.211765, 0.239216, 0.290196, 1)
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_top = -4.0
+offset_bottom = 4.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="ObjectsButton" type="Button" parent="HBoxContainer"]
+layout_mode = 2
+text = "Objects"

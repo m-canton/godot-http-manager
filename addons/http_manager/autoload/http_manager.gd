@@ -65,11 +65,7 @@ func _process(delta: float) -> void:
 			_on_failure(hc)
 	
 	for c in _clients:
-		for key in c.countdowns:
-			c[key] -= delta
-			if c[key] <= 0.0:
-				c.countdowns.erase(key)
-				_next(c)
+		c.process(delta)
 
 ## Cancels all the requests and clears queue from [param c] client. If [param c]
 ## is [code]null[/code], it cancels all the clients.
@@ -94,7 +90,7 @@ func cancel(r: HTTPManagerRequest) -> void:
 	if i != -1:
 		r.route.client._queue.remove_at(i)
 
-
+## Do not call this method. Use [method HTTPManagerRequest.start] instead.
 func request(r: HTTPManagerRequest) -> void:
 	var route := r.route
 	if not route:
@@ -107,10 +103,10 @@ func request(r: HTTPManagerRequest) -> void:
 		return
 	
 	client.queue(r)
-	_next(r.route.client)
 
-
-func _next(c: HTTPManagerClient) -> Error:
+## Do not call this method. This method is used by HTTPManager classes to make
+## next request if constraints are released.
+func next(c: HTTPManagerClient) -> Error:
 	if not c.can_next():
 		return OK
 	
@@ -119,7 +115,6 @@ func _next(c: HTTPManagerClient) -> Error:
 		return OK
 	
 	var hc := HTTPClient.new()
-	
 	var error := hc.connect_to_host(r.route.client.host, r.route.client.port, r.tls_options)
 	if error:
 		push_error(error_string(error))
@@ -128,6 +123,8 @@ func _next(c: HTTPManagerClient) -> Error:
 	hc.set_meta(HTTP_CLIENT_META_REQUEST, r)
 	hc.set_meta(HTTP_CLIENT_META_RESPONSE, HTTPManagerResponse.new())
 	_http_clients.append(hc)
+	if not c in _clients:
+		_clients.append(c)
 	
 	return OK
 
@@ -149,4 +146,4 @@ func _on_success(http_client: HTTPClient) -> void:
 	response.headers = http_client.get_response_headers_as_dictionary()
 	r.complete(response)
 	
-	_next(r.route.client)
+	next(r.route.client)

@@ -29,13 +29,13 @@ var tls_options: TLSOptions
 func complete(response: HTTPManagerResponse) -> void:
 	completed.emit(response)
 
-
+## Get endpoint uri with url params.
 func get_uri() -> String:
 	if route:
 		return route.endpoint + ("" if url_params.is_empty() else ("?" + url_params))
 	return ""
 
-
+## @experimental
 func _parse_query_dict(dict: Dictionary) -> PackedStringArray:
 	var array := PackedStringArray()
 	var _first := true
@@ -50,7 +50,7 @@ func _parse_query_dict(dict: Dictionary) -> PackedStringArray:
 			array.append(str("[", key, "]=", str(value).uri_encode()))
 	return array
 
-
+## @experimental
 func _parse_query_array(array: Array) -> PackedStringArray:
 	var r := PackedStringArray()
 	for i in range(array.size()):
@@ -71,17 +71,19 @@ func with_basic_auth(username: String, password: String) -> HTTPManagerRequest:
 	return self
 
 ## Adds Basic Authentication header. Not implementet yet.
+## @experimental
 func with_diggest_auth(_username: String, _password: String) -> HTTPManagerRequest:
 	push_error("Not implemented yet.")
 	return self
 
-
+## @experimental
 func _with_auth(type_credentials_string: String) -> void:
 	headers.append("Authorization: " + type_credentials_string)
 	use_auth = true
 #endregion
 
 ## Adds this request to client queue.
+## @experimental
 func start(query := {}) -> HTTPManagerRequest:
 	var query_array := PackedStringArray()
 	for key in query:
@@ -100,6 +102,7 @@ func start(query := {}) -> HTTPManagerRequest:
 	HTTPManager.request(self)
 	return self
 
+## @experimental
 func with_body(b) -> HTTPManagerRequest:
 	if b is Array or b is Dictionary:
 		body = JSON.stringify(b)
@@ -114,6 +117,10 @@ static func create_from_route(r: HTTPManagerRoute) -> HTTPManagerRequest:
 	var re := HTTPManagerRequest.new()
 	if not r:
 		push_error("Creating a request with null route.")
+		return null
+	
+	if not r.client:
+		push_error("Creating a request from route with  null client.")
 		return null
 	
 	re.route = r

@@ -12,8 +12,13 @@ config_version=5
 
 config/name="HTTP Manager"
 config/tags=PackedStringArray("network", "plugin", "unfinished")
+run/main_scene="res://addons/http_manager/test/test.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 config/icon="res://icon.svg"
+
+[autoload]
+
+HTTPManager="*res://addons/http_manager/autoload/http_manager.gd"
 
 [editor_plugins]
 
