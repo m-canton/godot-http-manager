@@ -10,7 +10,7 @@ const ROUTE_WEBSITE_POSTS := preload("res://website/posts.tres")
 func _request_posts() -> void:
     request.create_from_route(ROUTE_WEBSITE_POSTS).start({
         q = "word to search"
-    }).connect(_on_request_completed)
+    }).completed.connect(_on_request_completed)
 
 func _on_request_completed(response: HTTPManagerResponse) -> void:
     var data = response.parse()
