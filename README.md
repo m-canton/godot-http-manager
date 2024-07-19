@@ -4,7 +4,11 @@ DO NOT USE THIS PLUGIN YET! CODE IS NOT COMPLETED
 
 ## Introduction
 
-A plugin to create route resources for Rest APIs. So you use this code to make a request:
+This plugin adds a `HTTPManager` autoload to make multiple requests using routes defined with resources.
+
+Routes has attached a client, resource that defines the host. You can set restrictions to client like a number of requests per seconds.
+
+Example:
 
 ```gdscript
 extends Node
