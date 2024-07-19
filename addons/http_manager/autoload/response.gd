@@ -2,6 +2,7 @@ class_name HTTPManagerResponse extends RefCounted
 
 var body: PackedByteArray
 var code := HTTPClient.RESPONSE_OK
+var successful := false
 var headers := {}
 
 
@@ -51,8 +52,8 @@ func _check_subtype(s: String) -> bool:
 		_parse_content_type = _parse_content_type.substr(s.length())
 		return true
 	
-	if _parse_content_type.begins_with(s + "; "):
-		_parse_content_type = _parse_content_type.substr(s.length() + 2)
+	if _parse_content_type.begins_with(s + ";"):
+		_parse_content_type = _parse_content_type.substr(s.length() + 1).strip_edges(true, false)
 		return true
 	
 	return false

@@ -18,8 +18,8 @@ var headers := PackedStringArray()
 var use_auth := false
 ## Body.
 var body := ""
-## Url params.
-var url_params := ""
+## Parsed URI.
+var _parsed_uri := ""
 
 ## TLS Options.
 var tls_options: TLSOptions
@@ -30,39 +30,11 @@ func complete(response: HTTPManagerResponse) -> void:
 	completed.emit(response)
 
 ## Get endpoint uri with url params.
-func get_uri() -> String:
+func get_parsed_uri() -> String:
 	if route:
-		return route.endpoint + ("" if url_params.is_empty() else ("?" + url_params))
+		return _parsed_uri
 	return ""
 
-## @experimental
-func _parse_query_dict(dict: Dictionary) -> PackedStringArray:
-	var array := PackedStringArray()
-	var _first := true
-	for key in dict:
-		var value = dict[key]
-		if value is Dictionary:
-			for value_key in value:
-				_parse_query_dict(value)
-		elif value is Array:
-			_parse_query_array(value)
-		else:
-			array.append(str("[", key, "]=", str(value).uri_encode()))
-	return array
-
-## @experimental
-func _parse_query_array(array: Array) -> PackedStringArray:
-	var r := PackedStringArray()
-	for i in range(array.size()):
-		var value = array[i]
-		if value is Dictionary:
-			for value_key in value:
-				_parse_query_dict(value)
-		elif value is Array:
-			_parse_query_array(value)
-		else:
-			array.append(str("[", i, "]=", str(value).uri_encode()))
-	return r
 
 #region Authentication
 ## Adds Basic Authentication header.
@@ -76,7 +48,7 @@ func with_diggest_auth(_username: String, _password: String) -> HTTPManagerReque
 	push_error("Not implemented yet.")
 	return self
 
-## @experimental
+## Adds Authorization header.
 func _with_auth(type_credentials_string: String) -> void:
 	headers.append("Authorization: " + type_credentials_string)
 	use_auth = true
@@ -85,27 +57,59 @@ func _with_auth(type_credentials_string: String) -> void:
 ## Adds this request to client queue.
 ## @experimental
 func start(query := {}) -> HTTPManagerRequest:
-	var query_array := PackedStringArray()
-	for key in query:
-		var value = query[key]
-		if value is Dictionary:
-			var arr := _parse_query_dict(value)
-			for a in arr:
-				query_array.append(str(key, a))
-		elif value is Array:
-			var parsed_array := _parse_query_array(value)
-		elif value is bool:
-			query_array.append(str(key, "=", "1" if value else "0"))
+	var parts := route.uri_pattern.split("/")
+	var parsed_parts := PackedStringArray()
+	
+	var used_params := PackedStringArray()
+	
+	for part in parts:
+		var parsed_part := ""
+		if part in used_params:
+			push_error("Duplicated url param. Use different names in 'uri_patern': ", route.resource_path)
+			return self
+		elif part.begins_with("{"):
+			if part.ends_with("?}"):
+				part = part.substr(1, part.length() - 3)
+				
+				if not query.has(part):
+					continue
+			elif part.ends_with("}"):
+				part = part.substr(1, part.length() - 2)
+				
+				if not query.has(part):
+					push_error("Route requires '%s' param: %s" % [part, route.resource_path])
+					return self
+			else:
+				push_error("'{' does not close in 'uri_pattern': ", route.resource_path)
+				return self
+			
+			var query_value = query.get(part)
+			used_params.append(part)
+			query.erase(part)
+			
+			if query_value is int:
+				parsed_part = str(parsed_part)
+			elif query_value is StringName or query_value is String:
+				parsed_part = String(query_value)
+			else:
+				push_error("'%s' url param must be integer or string: %s" % [part, route.resource_path])
+				return self
 		else:
-			query_array.append(str(key, "=", str(value).uri_encode()))
-	url_params = "&".join(query_array)
-	HTTPManager.request(self)
+			parsed_part = part
+		parsed_parts.append(parsed_part)
+	
+	_parsed_uri = "/".join(parsed_parts) + route.client.parse_query(query)
+	print(_parsed_uri)
+	
+	var _error := HTTPManager.request(self)
+	
 	return self
 
+## Use only Array, Dictionary or String. Don't use Packed*Array types.
 ## @experimental
 func with_body(b) -> HTTPManagerRequest:
 	if b is Array or b is Dictionary:
-		body = JSON.stringify(b)
+		body = JSON.stringify(b, "", false)
 	elif b is String:
 		body = b
 	else:

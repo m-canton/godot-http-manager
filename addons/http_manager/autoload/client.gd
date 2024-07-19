@@ -1,11 +1,17 @@
 class_name HTTPManagerClient extends Resource
 
+## HTTPManager Client resource.
+## 
+## This resource defines a client to use it in [HTTPManagerRoute] resources.
 
 enum ArrayParamFormat {
 	MULTIPLE, ## [code]foo=bar&foo=qux[/code]
 	SQUARE_BRACKET_EMPTY, ## [code]foo[]=bar&foo[]=qux[/code]
 	SQUARE_BRACKET_INDEX, ## [code]foo[0]=bar&foo[1]=qux[/code]
+	ENCODED_SQUARE_BRACKET_EMPTY, ## [code]foo[]=bar&foo[]=qux[/code]
+	ENCODED_SQUARE_BRACKET_INDEX, ## [code]foo[0]=bar&foo[1]=qux[/code]
 	COMMA_SEPARATED, ## [code]foo=bar,qux[/code]
+	SPACE_SEPARATED, ## [code]foo=bar aux[/code]
 }
 
 ## Host or base url.
@@ -29,7 +35,7 @@ enum ArrayParamFormat {
 @export_group("URL Params", "url_param_")
 @export var url_param_bool_true := "1"
 @export var url_param_bool_false := "0"
-@export var url_param_array := ArrayParamFormat.MULTIPLE
+@export var url_param_array_format := ArrayParamFormat.MULTIPLE
 
 ## See [HTTPManager.next].
 var http_client_count := 0
@@ -103,3 +109,49 @@ func _current_constraints() -> Array[HTTPManagerConstraint]:
 	if constraint_current_set < 0 or constraint_current_set > constraint_sets.size():
 		return []
 	return constraint_sets[constraint_current_set].constraints
+
+
+func parse_query(query: Dictionary) -> String:
+	var s := ""
+	for key in query:
+		s += "&"
+		var value = query[key]
+		match typeof(value):
+			TYPE_ARRAY, TYPE_PACKED_BYTE_ARRAY, TYPE_PACKED_INT32_ARRAY, TYPE_PACKED_INT64_ARRAY, TYPE_PACKED_STRING_ARRAY, TYPE_PACKED_FLOAT32_ARRAY, TYPE_PACKED_FLOAT64_ARRAY:
+				var t := ""
+				if url_param_array_format == ArrayParamFormat.MULTIPLE:
+					for a in value:
+						t += str("&", key, "=", str(a).uri_encode())
+					s += t.substr(1)
+				elif url_param_array_format == ArrayParamFormat.SQUARE_BRACKET_EMPTY:
+					for a in value:
+						t += str("&", key, "[]=", str(a).uri_encode())
+					s += t.substr(1)
+				elif url_param_array_format == ArrayParamFormat.SQUARE_BRACKET_INDEX:
+					for i in range(value.size()):
+						t += str("&", key, "[", i, "]=", str(value[i]).uri_encode())
+					s += t.substr(1)
+				elif url_param_array_format == ArrayParamFormat.ENCODED_SQUARE_BRACKET_EMPTY:
+					for i in range(value.size()):
+						t += str("&", key, "%5B%5D=", str(value[i]).uri_encode())
+					s += t.substr(1)
+				elif url_param_array_format == ArrayParamFormat.ENCODED_SQUARE_BRACKET_INDEX:
+					for i in range(value.size()):
+						t += str("&", key, "%5B", i, "%5D=", str(value[i]).uri_encode())
+					s += t.substr(1)
+				elif url_param_array_format == ArrayParamFormat.COMMA_SEPARATED:
+					for a in value:
+						t += " " + str(a).uri_encode()
+					s += str(key, "=", t.substr(1))
+				elif url_param_array_format == ArrayParamFormat.SPACE_SEPARATED:
+					for a in value:
+						t += "," + str(a).uri_encode()
+					s += str(key, "=", t.substr(1))
+			TYPE_NIL:
+				s += str(key)
+			TYPE_BOOL:
+				s += str(key, "=", url_param_bool_true if value else url_param_bool_false)
+			_:
+				s += str(key, "=", str(value).uri_encode())
+	
+	return s if s.is_empty() else "?" + s.substr(1)

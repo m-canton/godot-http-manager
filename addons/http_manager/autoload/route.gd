@@ -24,11 +24,16 @@ enum Method {
 
 ## Client that uses this route.
 @export var client: HTTPManagerClient
-## Endpoint or uri. It must start with [code]/[/code].
-@export var endpoint := ""
+## URI pattern. It must start with [code]/[/code]. You can set url param with
+## [code]{}[/code].[br]
+## [b]Example:[/b] [code]/objects/{id}/{edit?}[/code]. [code]id[/code] is
+## required but [code]edit[/code] is optional (closed with [code]?}[/code]).
+@export var uri_pattern := ""
 ## Default headers for this route.
 @export var headers := PackedStringArray()
 ## Method for this route.
 @export var method := Method.GET
 ## Request priority. Lower values are first in the client queue.
 @export var priority := 0
+
+var tmp := "hello"

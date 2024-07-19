@@ -26,7 +26,7 @@ var _http_clients: Array[HTTPClient] = []
 
 func _process(delta: float) -> void:
 	for hc in _http_clients:
-		var _error := hc.poll()
+		var error := hc.poll()
 		var status := hc.get_status()
 		if status == HTTPClient.STATUS_BODY:
 			print("body")
@@ -40,11 +40,14 @@ func _process(delta: float) -> void:
 		elif status == HTTPClient.STATUS_CONNECTING:
 			print("connecting...")
 		elif status == HTTPClient.STATUS_CONNECTED:
+			print("connected")
 			if hc.get_meta("requesting", false):
 				_on_success(hc)
 			else:
 				var r: HTTPManagerRequest = hc.get_meta(HTTP_CLIENT_META_REQUEST)
-				hc.request(r.route.method as HTTPClient.Method, r.route.endpoint, r.headers, r.body)
+				error = hc.request(r.route.method as HTTPClient.Method, r.get_parsed_uri(), r.headers, r.body)
+				if error:
+					_on_failure(hc)
 		elif status == HTTPClient.STATUS_RESOLVING:
 			print("resolving...")
 			pass
@@ -67,17 +70,7 @@ func _process(delta: float) -> void:
 	for c in _clients:
 		c.process(delta)
 
-## Cancels all the requests and clears queue from [param c] client. If [param c]
-## is [code]null[/code], it cancels all the clients.
-func cancel_all(c: HTTPManagerClient) -> void:
-	for hc in _http_clients:
-		if not c or hc.get_meta(HTTP_CLIENT_META_REQUEST).route.client == c:
-			hc.close()
-	
-	for c2 in _clients:
-		if c2 == c:
-			c.clear()
-
+#region Cancel Requests
 ## Removes a request from queue or closes the [HTTPClient] that is requesting
 ## it.
 func cancel(r: HTTPManagerRequest) -> void:
@@ -90,19 +83,37 @@ func cancel(r: HTTPManagerRequest) -> void:
 	if i != -1:
 		r.route.client._queue.remove_at(i)
 
+## Cancels all the requests and clears queue from [param c] client. If [param c]
+## is [code]null[/code], it cancels all the clients.
+func cancel_all(c: HTTPManagerClient) -> void:
+	for hc in _http_clients:
+		if not c or hc.get_meta(HTTP_CLIENT_META_REQUEST).route.client == c:
+			hc.close()
+	
+	for c2 in _clients:
+		if c2 == c:
+			c.clear()
+#endregion
+
 ## Do not call this method. Use [method HTTPManagerRequest.start] instead.
-func request(r: HTTPManagerRequest) -> void:
+func request(r: HTTPManagerRequest) -> Error:
 	var route := r.route
 	if not route:
 		push_error("Request has null route.")
-		return
+		return FAILED
 	
 	var client := r.route.client
 	if not client:
 		push_error("Request route has null client.")
-		return
+		return FAILED
+	
+	var uri := r.get_parsed_uri()
+	if uri.is_empty():
+		push_error("'uri' is empty. See the parse errors.")
+		return FAILED
 	
 	client.queue(r)
+	return OK
 
 ## Do not call this method. This method is used by HTTPManager classes to make
 ## next request if constraints are released.
@@ -144,6 +155,7 @@ func _on_success(http_client: HTTPClient) -> void:
 	var response: HTTPManagerResponse = http_client.get_meta(HTTP_CLIENT_META_RESPONSE)
 	response.code = http_client.get_response_code() as HTTPClient.ResponseCode
 	response.headers = http_client.get_response_headers_as_dictionary()
+	response.successful = true
 	r.complete(response)
 	
 	next(r.route.client)

@@ -6,7 +6,7 @@
 [resource]
 script = ExtResource("1_3e8kt")
 client = ExtResource("1_ae7u5")
-endpoint = "/objects"
+uri_pattern = "/objects"
 headers = PackedStringArray()
 method = 0
 priority = 0

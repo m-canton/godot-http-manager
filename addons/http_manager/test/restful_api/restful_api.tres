@@ -26,4 +26,4 @@ constraint_current_set = 0
 constraint_sets = Array[ExtResource("1_ltvgo")]([SubResource("Resource_8aww1")])
 url_param_bool_true = "1"
 url_param_bool_false = "0"
-url_param_array = 0
+url_param_array_format = 0
