@@ -6,7 +6,7 @@ DO NOT USE THIS PLUGIN YET! CODE IS NOT COMPLETED
 
 This plugin adds a `HTTPManager` autoload to make multiple requests using routes defined with resources.
 
-Routes have attached a client, resource that defines the host. You can set restrictions to client like requests per second.
+Routes have attached a client, resource that defines the host. You can set contraints to client like requests per second.
 
 Example:
 
