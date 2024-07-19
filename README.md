@@ -1,10 +1,14 @@
 # HTTP Manager Plugin for Godot
 
-DO NOT USE THIS PLUGIN YET! CODE IS NOT COMPLETED
+⚠ DO NOT USE THIS PLUGIN YET! CODE IS NOT COMPLETED ⚠
 
 ## Introduction
 
-A plugin to create route resources for Rest APIs. So you use this code to make a request:
+This plugin adds a `HTTPManager` autoload to make multiple requests using routes defined with resources.
+
+Routes have attached a client, resource that defines the host. You can add constraints to the client like requests per second.
+
+Example:
 
 ```gdscript
 extends Node
