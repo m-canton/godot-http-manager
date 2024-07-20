@@ -24,6 +24,10 @@ HTTPManager="*res://addons/http_manager/autoload/http_manager.gd"
 
 enabled=PackedStringArray("res://addons/http_manager/plugin.cfg")
 
+[filesystem]
+
+import/blender/enabled=false
+
 [rendering]
 
 renderer/rendering_method="mobile"
