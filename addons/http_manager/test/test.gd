@@ -187,7 +187,6 @@ func _validate(validated_data: Dictionary) -> Error:
 	return OK
 
 func _on_object_updated(response: HTTPManagerResponse) -> void:
-	print("eh")
 	edit_reset_button.disabled = false
 	edit_button.disabled = false
 	if response.successful:
