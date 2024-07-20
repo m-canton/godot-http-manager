@@ -1,7 +1,5 @@
 # HTTP Manager Plugin for Godot
 
-⚠ DO NOT USE THIS PLUGIN YET! CODE IS NOT COMPLETED ⚠
-
 ## Introduction
 
 This plugin adds a `HTTPManager` autoload to make multiple requests using routes defined with resources.
@@ -26,4 +24,4 @@ func _on_request_completed(response: HTTPManagerResponse) -> void:
 
 ## Requirements
 
-- Godot version: 4.3.x
+- Godot version: 4.2.x, 4.3.x
