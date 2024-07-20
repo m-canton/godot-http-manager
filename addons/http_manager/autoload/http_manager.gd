@@ -33,18 +33,17 @@ func _process(delta: float) -> void:
 		var error := hc.poll()
 		var status := hc.get_status()
 		if status == HTTPClient.STATUS_BODY:
-			print("body")
 			var r: HTTPManagerResponse = hc.get_meta(HTTP_CLIENT_META_RESPONSE)
 			var chunk := hc.read_response_body_chunk()
 			if not chunk.is_empty():
 				r.body.append_array(chunk)
 		elif status == HTTPClient.STATUS_REQUESTING:
 			hc.set_meta("requesting", true)
-			print("requesting...")
 		elif status == HTTPClient.STATUS_CONNECTING:
-			print("connecting...")
+			pass
+		elif status == HTTPClient.STATUS_RESOLVING:
+			pass
 		elif status == HTTPClient.STATUS_CONNECTED:
-			print("connected")
 			if hc.get_meta("requesting", false):
 				_on_success(hc)
 			else:
@@ -52,11 +51,7 @@ func _process(delta: float) -> void:
 				error = hc.request(r.route.method as HTTPClient.Method, r.get_parsed_uri(), r.headers, r.body)
 				if error:
 					_on_failure(hc)
-		elif status == HTTPClient.STATUS_RESOLVING:
-			print("resolving...")
-			pass
 		elif status == HTTPClient.STATUS_DISCONNECTED:
-			print("disconnected")
 			_on_success(hc)
 		elif status == HTTPClient.STATUS_TLS_HANDSHAKE_ERROR:
 			push_error("tls handshake error...")

@@ -20,7 +20,7 @@ func _init_search_many() -> void:
 
 func _on_objects_requested() -> void:
 	#objects_button.disabled = true
-	var request := HTTPManager.create_request_from_route(RESTFUL_API_OBJECTS)
+	var request: HTTPManagerRequest = get_node("/root/HTTPManager").create_request_from_route(RESTFUL_API_OBJECTS)
 	if request.start() == OK:
 		request.completed.connect(_on_objects_received)
 
@@ -57,7 +57,7 @@ func _on_object_id_submitted(text: String) -> void:
 		push_warning("'text' must not be empty.")
 		return
 	
-	var request := HTTPManager.create_request_from_route(preload("res://addons/http_manager/test/restful_api/routes/objects_show.tres"), {
+	var request: HTTPManagerRequest = get_node("/root/HTTPManager").create_request_from_route(preload("res://addons/http_manager/test/restful_api/routes/objects_show.tres"), {
 		id = text,
 	})
 	if request.start() == OK:
@@ -155,7 +155,7 @@ func _on_create_or_update_object() -> void:
 		return
 	
 	if _editing_object.is_empty():
-		var request := HTTPManager.create_request_from_route(preload("res://addons/http_manager/test/restful_api/routes/objects_store.tres")) \
+		var request: HTTPManagerRequest = get_node("/root/HTTPManager").create_request_from_route(preload("res://addons/http_manager/test/restful_api/routes/objects_store.tres")) \
 				.with_body(validated_data, HTTPManagerRequest.ContentType.JSON)
 		
 		if request.start() == OK:
@@ -163,7 +163,7 @@ func _on_create_or_update_object() -> void:
 			edit_reset_button.disabled = true
 			request.completed.connect(_on_object_updated)
 	else:
-		var request := HTTPManager.create_request_from_route(preload("res://addons/http_manager/test/restful_api/routes/objects_update.tres"), {
+		var request: HTTPManagerRequest = get_node("/root/HTTPManager").create_request_from_route(preload("res://addons/http_manager/test/restful_api/routes/objects_update.tres"), {
 			id = _editing_object,
 		}).with_body(validated_data, HTTPManagerRequest.ContentType.JSON)
 		
