@@ -13,7 +13,7 @@ var processing := false
 func check(_route: HTTPManagerRoute) -> bool:
 	return false
 
-## Handles a route
+## Handles a route that is going to request.
 func handle(_route: HTTPManagerRoute) -> void:
 	pass
 

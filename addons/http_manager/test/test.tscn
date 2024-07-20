@@ -1,8 +1,25 @@
-[gd_scene load_steps=2 format=3 uid="uid://cydv7wnl2j7mh"]
+[gd_scene load_steps=4 format=3 uid="uid://cydv7wnl2j7mh"]
 
 [ext_resource type="Script" path="res://addons/http_manager/test/test.gd" id="1_ueaph"]
+[ext_resource type="PackedScene" uid="uid://bmyklmw3056p" path="res://addons/http_manager/test/object_card.tscn" id="2_ghxdl"]
 
-[node name="test" type="Control"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_viix5"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+draw_center = false
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.8, 0.8, 0.8, 0.282353)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="Test" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -20,23 +37,122 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.211765, 0.239216, 0.290196, 1)
 
-[node name="HBoxContainer" type="HBoxContainer" parent="."]
+[node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 1
-anchors_preset = 14
-anchor_top = 0.5
+anchors_preset = 15
 anchor_right = 1.0
-anchor_bottom = 0.5
-offset_top = -4.0
-offset_bottom = 4.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 16
 alignment = 1
 
-[node name="ObjectsButton" type="Button" parent="HBoxContainer"]
+[node name="Objects" type="VBoxContainer" parent="MarginContainer/HBoxContainer"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="MarginContainer/HBoxContainer/Objects"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
 text = "Objects"
 
-[node name="LineEdit" type="LineEdit" parent="HBoxContainer"]
+[node name="SearchButton" type="Button" parent="MarginContainer/HBoxContainer/Objects"]
+layout_mode = 2
+text = "Search"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/HBoxContainer/Objects"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/HBoxContainer/Objects/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="ObjectsShow" type="VBoxContainer" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="MarginContainer/HBoxContainer/ObjectsShow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Object by ID"
+
+[node name="LineEdit" type="LineEdit" parent="MarginContainer/HBoxContainer/ObjectsShow"]
 custom_minimum_size = Vector2(120, 0)
 layout_mode = 2
 placeholder_text = "Object by ID"
+
+[node name="ObjectCard" parent="MarginContainer/HBoxContainer/ObjectsShow" instance=ExtResource("2_ghxdl")]
+visible = false
+layout_mode = 2
+
+[node name="ObjectsEdit" type="VBoxContainer" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/HBoxContainer/ObjectsEdit"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/HBoxContainer/ObjectsEdit/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 24
+text = "Edit Object"
+text_overrun_behavior = 3
+
+[node name="Button" type="Button" parent="MarginContainer/HBoxContainer/ObjectsEdit/HBoxContainer"]
+layout_mode = 2
+text = "Reset"
+
+[node name="NameControl" type="HBoxContainer" parent="MarginContainer/HBoxContainer/ObjectsEdit"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="MarginContainer/HBoxContainer/ObjectsEdit/NameControl"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Name"
+
+[node name="LineEdit" type="LineEdit" parent="MarginContainer/HBoxContainer/ObjectsEdit/NameControl"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DataControl" type="PanelContainer" parent="MarginContainer/HBoxContainer/ObjectsEdit"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_viix5")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/HBoxContainer/ObjectsEdit/DataControl"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Label" type="Label" parent="MarginContainer/HBoxContainer/ObjectsEdit/DataControl/VBoxContainer"]
+layout_mode = 2
+text = "Data"
+
+[node name="Fields" type="VBoxContainer" parent="MarginContainer/HBoxContainer/ObjectsEdit/DataControl/VBoxContainer"]
+layout_mode = 2
+
+[node name="AddButton" type="Button" parent="MarginContainer/HBoxContainer/ObjectsEdit/DataControl/VBoxContainer"]
+layout_mode = 2
+text = "Add"
+
+[node name="Button" type="Button" parent="MarginContainer/HBoxContainer/ObjectsEdit"]
+layout_mode = 2
+text = "Create"
+
+[node name="MessageLabel" type="Label" parent="MarginContainer/HBoxContainer/ObjectsEdit"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+autowrap_mode = 2

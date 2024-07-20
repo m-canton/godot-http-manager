@@ -24,6 +24,7 @@ enum ArrayParamFormat {
 @export var headers: PackedStringArray = []
 ## Priority in HTTPManager to make requests.[br]
 ## [b]Note: [/b] It does nothing yet.
+## @experimental
 @export var priority := 0
 
 @export_group("Constraint", "constraint_")
@@ -33,8 +34,11 @@ enum ArrayParamFormat {
 @export var constraint_sets: Array[HTTPManagerConstraintSet] = []
 
 @export_group("URL Params", "url_param_")
+## Replaces [code]true[/code] value by this string in url param values.
 @export var url_param_bool_true := "1"
+## Replaces [code]false[/code] value by this string in url param values.
 @export var url_param_bool_false := "0"
+## Array format for url param values. See [enum ArrayParamFormat].
 @export var url_param_array_format := ArrayParamFormat.MULTIPLE
 
 ## See [HTTPManager.next].
@@ -105,6 +109,11 @@ func is_empty() -> bool:
 	return _queue.is_empty()
 
 
+func apply_constraints(r: HTTPManagerRoute) -> void:
+	for c in _current_constraints():
+		c.handle(r)
+
+
 func _current_constraints() -> Array[HTTPManagerConstraint]:
 	if constraint_current_set < 0 or constraint_current_set > constraint_sets.size():
 		return []
@@ -140,9 +149,7 @@ func parse_query(query: Dictionary) -> String:
 						t += str("&", key, "%5B", i, "%5D=", str(value[i]).uri_encode())
 					s += t.substr(1)
 				elif url_param_array_format == ArrayParamFormat.COMMA_SEPARATED:
-					for a in value:
-						t += " " + str(a).uri_encode()
-					s += str(key, "=", t.substr(1))
+					s += str(key, "=", " ".join(Array(value)).uri_encode())
 				elif url_param_array_format == ArrayParamFormat.SPACE_SEPARATED:
 					for a in value:
 						t += "," + str(a).uri_encode()

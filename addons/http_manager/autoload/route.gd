@@ -30,10 +30,8 @@ enum Method {
 ## required but [code]edit[/code] is optional (closed with [code]?}[/code]).
 @export var uri_pattern := ""
 ## Default headers for this route.
-@export var headers := PackedStringArray()
+@export var headers: PackedStringArray = []
 ## Method for this route.
 @export var method := Method.GET
 ## Request priority. Lower values are first in the client queue.
 @export var priority := 0
-
-var tmp := "hello"

@@ -12,16 +12,20 @@ extends Node
 ##         request_data.request_completed(_on_a_request_completed)
 ## [/codeblock]
 
-enum HTTPClientMeta {
-	REQUEST,
-	RESPONSE,
-}
-
+## [HTTPClient] request meta key.
 const HTTP_CLIENT_META_REQUEST := &"request"
+## [HTTPClient] response meta key.
 const HTTP_CLIENT_META_RESPONSE := &"response"
 
+## Active [HTTPManagerClient]. If a contraint is processing, client continues
+## active.
 var _clients: Array[HTTPManagerClient] = []
+## Active [HTTPClient]s.
 var _http_clients: Array[HTTPClient] = []
+
+
+func _ready() -> void:
+	set_process(false)
 
 
 func _process(delta: float) -> void:
@@ -76,7 +80,7 @@ func _process(delta: float) -> void:
 func cancel(r: HTTPManagerRequest) -> void:
 	for hc in _http_clients:
 		if hc.get_meta("request") == r:
-			hc.close()
+			_on_failure(hc)
 			return
 	
 	var i = r.route.client._queue.find(r)
@@ -88,14 +92,42 @@ func cancel(r: HTTPManagerRequest) -> void:
 func cancel_all(c: HTTPManagerClient) -> void:
 	for hc in _http_clients:
 		if not c or hc.get_meta(HTTP_CLIENT_META_REQUEST).route.client == c:
-			hc.close()
+			_on_failure(hc)
 	
 	for c2 in _clients:
 		if c2 == c:
 			c.clear()
 #endregion
 
-## Do not call this method. Use [method HTTPManagerRequest.start] instead.
+## Creates a request instance from a route.
+func create_request_from_route(route: HTTPManagerRoute, url_params := {}) -> HTTPManagerRequest:
+	var r := HTTPManagerRequest.new()
+	if not route:
+		push_error("Creating a request with null route.")
+		return null
+	
+	if not route.client:
+		push_error("Creating a request from route with  null client.")
+		return null
+	
+	r.route = route
+	
+	for h in route.headers:
+		if not h in r.headers:
+			r.headers.append(h)
+	
+	for h in route.client.headers:
+		if not h in r.headers:
+			r.headers.append(h)
+	
+	if r.set_url_params(url_params):
+		return null
+	
+	return r
+
+## Do not call this method. Use [method HTTPManager.create_request_from_route]
+## instead.
+## @experimental
 func request(r: HTTPManagerRequest) -> Error:
 	var route := r.route
 	if not route:
@@ -137,11 +169,16 @@ func next(c: HTTPManagerClient) -> Error:
 	if not c in _clients:
 		_clients.append(c)
 	
+	c.apply_constraints(r.route)
+	
+	set_process(true)
+	
 	return OK
 
 
 func _on_failure(http_client: HTTPClient) -> void:
 	_http_clients.erase(http_client)
+	
 	var r: HTTPManagerResponse = http_client.get_meta(HTTP_CLIENT_META_RESPONSE)
 	r.code = http_client.get_response_code() as HTTPClient.ResponseCode
 	push_error("Request error with code:", r.code)

@@ -8,5 +8,5 @@ script = ExtResource("2_hj2s7")
 client = ExtResource("1_luitr")
 uri_pattern = "/objects/{id}"
 headers = null
-method = 3
+method = 8
 priority = 0

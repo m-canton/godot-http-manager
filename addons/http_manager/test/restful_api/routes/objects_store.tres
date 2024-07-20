@@ -6,7 +6,7 @@
 [resource]
 script = ExtResource("2_dyxkm")
 client = ExtResource("1_ekg23")
-uri_pattern = "/objects/{id}"
-headers = null
+uri_pattern = "/objects"
+headers = []
 method = 2
 priority = 0

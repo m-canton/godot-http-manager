@@ -8,6 +8,11 @@ signal completed(response: HTTPManagerResponse)
 ## restrictions. Use [method create_from_route] to create a instance because
 ## it adds the client and route headers to this and sets the route for you.
 
+enum ContentType {
+	NONE,
+	JSON,
+}
+
 ## Route resource.
 var route: HTTPManagerRoute
 ## Overrides route priority. See [HTTPManagerRoute.priority].
@@ -54,80 +59,77 @@ func _with_auth(type_credentials_string: String) -> void:
 	use_auth = true
 #endregion
 
-## Adds this request to client queue.
-## @experimental
-func start(query := {}) -> HTTPManagerRequest:
+## [method HTTPManager.create_request_from_route] calls this method to parse and
+## add the url params.
+func set_url_params(dict: Dictionary) -> Error:
 	var parts := route.uri_pattern.split("/")
 	var parsed_parts := PackedStringArray()
-	
 	var used_params := PackedStringArray()
 	
 	for part in parts:
 		var parsed_part := ""
 		if part in used_params:
 			push_error("Duplicated url param. Use different names in 'uri_patern': ", route.resource_path)
-			return self
+			return FAILED
 		elif part.begins_with("{"):
 			if part.ends_with("?}"):
 				part = part.substr(1, part.length() - 3)
 				
-				if not query.has(part):
+				if not dict.has(part):
 					continue
 			elif part.ends_with("}"):
 				part = part.substr(1, part.length() - 2)
 				
-				if not query.has(part):
+				if not dict.has(part):
 					push_error("Route requires '%s' param: %s" % [part, route.resource_path])
-					return self
+					return FAILED
 			else:
 				push_error("'{' does not close in 'uri_pattern': ", route.resource_path)
-				return self
+				return FAILED
 			
-			var query_value = query.get(part)
+			var dict_value = dict.get(part)
 			used_params.append(part)
-			query.erase(part)
+			dict.erase(part)
 			
-			if query_value is int:
+			if dict_value is int:
 				parsed_part = str(parsed_part)
-			elif query_value is StringName or query_value is String:
-				parsed_part = String(query_value)
+			elif dict_value is StringName or dict_value is String:
+				parsed_part = String(dict_value)
 			else:
 				push_error("'%s' url param must be integer or string: %s" % [part, route.resource_path])
-				return self
+				return FAILED
 		else:
 			parsed_part = part
 		parsed_parts.append(parsed_part)
 	
-	_parsed_uri = "/".join(parsed_parts) + route.client.parse_query(query)
-	print(_parsed_uri)
+	_parsed_uri = "/".join(parsed_parts) + route.client.parse_query(dict)
 	
-	var _error := HTTPManager.request(self)
-	
-	return self
+	return OK
+
+## Adds this request to client queue.
+## @experimental
+func start() -> Error:
+	return HTTPManager.request(self)
 
 ## Use only Array, Dictionary or String. Don't use Packed*Array types.
 ## @experimental
-func with_body(b) -> HTTPManagerRequest:
+func with_body(b, content_type := ContentType.NONE) -> HTTPManagerRequest:
 	if b is Array or b is Dictionary:
 		body = JSON.stringify(b, "", false)
 	elif b is String:
 		body = b
 	else:
 		push_warning("Not valid body")
+	
+	for h in headers:
+		if h.begins_with("Content-Type:"):
+			return self
+	
+	var mimetype := ""
+	if content_type == ContentType.JSON:
+		mimetype = "application/json"
+	
+	if not mimetype.is_empty():
+		headers.append("Content-Type: " + mimetype)
+	
 	return self
-
-## Creates a request instance from a route.
-static func create_from_route(r: HTTPManagerRoute) -> HTTPManagerRequest:
-	var re := HTTPManagerRequest.new()
-	if not r:
-		push_error("Creating a request with null route.")
-		return null
-	
-	if not r.client:
-		push_error("Creating a request from route with  null client.")
-		return null
-	
-	re.route = r
-	re.headers.append_array(r.headers)
-	re.headers.append_array(r.client.headers)
-	return re
