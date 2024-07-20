@@ -6,7 +6,7 @@ This plugin adds a `HTTPManager` autoload to make multiple requests using routes
 
 Routes have attached a client, resource that defines the host. You can add constraints to the client like requests per second.
 
-Example:
+**Example:**
 
 ```gdscript
 extends Node
@@ -21,6 +21,8 @@ func _request_posts() -> void:
 func _on_request_completed(response: HTTPManagerResponse) -> void:
     var data = response.parse()
 ```
+
+See [wiki](https://github.com/m-canton/godot-http-manager/wiki) to know how to use this plugin.
 
 ## Requirements
 
