@@ -14,9 +14,9 @@ extends Node
 const ROUTE_WEBSITE_POSTS := preload("res://website/posts.tres")
 
 func _request_posts() -> void:
-    HTTPManagerRequest.create_from_route(ROUTE_WEBSITE_POSTS).start({
-        
-    }).completed.connect(_on_request_completed)
+    var request := HTTPManagerRequest.create_from_route(ROUTE_WEBSITE_POSTS, {})
+    if request.start() == OK:
+         request.completed.connect(_on_request_completed)
 
 func _on_request_completed(response: HTTPManagerResponse) -> void:
     var data = response.parse()
