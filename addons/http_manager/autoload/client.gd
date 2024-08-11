@@ -122,7 +122,6 @@ func _parse_base_url() -> void:
 		prefix = ""
 	else:
 		s = s[0].split("/", false, 1)
-		print(s)
 		ss = s.size()
 		if ss == 0:
 			host = protocol + ""

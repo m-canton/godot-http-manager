@@ -41,6 +41,10 @@ func with_basic_auth(username: String, password: String) -> HTTPManagerRequest:
 	_with_auth("Basic " + Marshalls.utf8_to_base64(username + ":" + password))
 	return self
 
+func with_bearer_auth(token: String) -> HTTPManagerRequest:
+	_with_auth("Bearer " + token)
+	return self
+
 ## Adds Basic Authentication header. Not implementet yet.
 ## @experimental
 func with_diggest_auth(_username: String, _password: String) -> HTTPManagerRequest:
