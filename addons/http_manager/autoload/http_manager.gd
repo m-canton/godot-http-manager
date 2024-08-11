@@ -67,7 +67,8 @@ func _process(delta: float) -> void:
 			_on_failure(hc)
 	
 	for c in _clients:
-		c.process(delta)
+		if c.process(delta):
+			_next(c)
 
 #region Cancel Requests
 ## Removes a request from queue or closes the [HTTPClient] that is requesting
@@ -94,32 +95,6 @@ func cancel_all(c: HTTPManagerClient) -> void:
 			c.clear()
 #endregion
 
-## Creates a request instance from a route.
-func create_request_from_route(route: HTTPManagerRoute, url_params := {}) -> HTTPManagerRequest:
-	var r := HTTPManagerRequest.new()
-	if not route:
-		push_error("Creating a request with null route.")
-		return null
-	
-	if not route.client:
-		push_error("Creating a request from route with  null client.")
-		return null
-	
-	r.route = route
-	
-	for h in route.headers:
-		if not h in r.headers:
-			r.headers.append(h)
-	
-	for h in route.client.headers:
-		if not h in r.headers:
-			r.headers.append(h)
-	
-	if r.set_url_params(url_params):
-		return null
-	
-	return r
-
 ## Do not call this method. Use [method HTTPManager.create_request_from_route]
 ## instead.
 ## @experimental
@@ -140,11 +115,22 @@ func request(r: HTTPManagerRequest) -> Error:
 		return FAILED
 	
 	client.queue(r)
+	_next(client)
+	
 	return OK
+
+func fetch(r: HTTPManagerRequest) -> Variant:
+	if request(r) == OK:
+		var response: HTTPManagerResponse = await r.completed
+		if response.successful:
+			return response.parse()
+		else:
+			return null
+	return null
 
 ## Do not call this method. This method is used by HTTPManager classes to make
 ## next request if constraints are released.
-func next(c: HTTPManagerClient) -> Error:
+func _next(c: HTTPManagerClient) -> Error:
 	if not c.can_next():
 		return OK
 	
@@ -170,6 +156,16 @@ func next(c: HTTPManagerClient) -> Error:
 	
 	return OK
 
+## Adds TLS Options to a client. For now it is not used.
+## @experimental
+func set_tls_options(client: HTTPManagerClient, tls_options: TLSOptions) -> Error:
+	if not client:
+		push_error("Client is null.")
+		return FAILED
+	
+	client.tls_options = tls_options
+	return OK
+
 
 func _on_failure(http_client: HTTPClient) -> void:
 	_http_clients.erase(http_client)
@@ -190,4 +186,4 @@ func _on_success(http_client: HTTPClient) -> void:
 	response.successful = true
 	r.complete(response)
 	
-	next(r.route.client)
+	_next(r.route.client)

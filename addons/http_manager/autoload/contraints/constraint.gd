@@ -20,6 +20,6 @@ func handle(_route: HTTPManagerRoute) -> void:
 ## Called by HTTPManager if [member processing] is true. Changes
 ## [member processing] since [method handle] and [method process] methods.
 ## It is used to handle constraint times.[br]
-## Returns true if it must call [method HTTPManager.next].
+## Returns [code]true[/code] if it is released to call the next request in queue.
 func process(_delta: float) -> bool:
 	return false

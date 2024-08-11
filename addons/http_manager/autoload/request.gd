@@ -8,11 +8,6 @@ signal completed(response: HTTPManagerResponse)
 ## restrictions. Use [method create_from_route] to create a instance because
 ## it adds the client and route headers to this and sets the route for you.
 
-enum ContentType {
-	NONE,
-	JSON,
-}
-
 ## Route resource.
 var route: HTTPManagerRoute
 ## Overrides route priority. See [HTTPManagerRoute.priority].
@@ -39,7 +34,6 @@ func get_parsed_uri() -> String:
 	if route:
 		return _parsed_uri
 	return ""
-
 
 #region Authentication
 ## Adds Basic Authentication header.
@@ -106,14 +100,9 @@ func set_url_params(dict: Dictionary) -> Error:
 	
 	return OK
 
-## Adds this request to client queue.
-## @experimental
-func start() -> Error:
-	return HTTPManager.request(self)
-
 ## Use only Array, Dictionary or String. Don't use Packed*Array types.
 ## @experimental
-func with_body(b, content_type := ContentType.NONE) -> HTTPManagerRequest:
+func with_body(b, content_type := MIME.NONE) -> HTTPManagerRequest:
 	if b is Array or b is Dictionary:
 		body = JSON.stringify(b, "", false)
 	elif b is String:
@@ -126,10 +115,52 @@ func with_body(b, content_type := ContentType.NONE) -> HTTPManagerRequest:
 			return self
 	
 	var mimetype := ""
-	if content_type == ContentType.JSON:
+	if content_type == MIME.JSON:
 		mimetype = "application/json"
 	
 	if not mimetype.is_empty():
 		headers.append("Content-Type: " + mimetype)
 	
 	return self
+
+#region MIME
+enum MIME {
+	NONE,
+	JSON,
+	PNG,
+}
+
+const MIME_DICT := {
+	MIME.NONE: "",
+	MIME.JSON: "application/json",
+	MIME.PNG: "image/png",
+}
+
+static func string_to_mime(s: String) -> MIME:
+	for key in MIME_DICT:
+		if MIME_DICT[key] == s:
+			return key
+	return MIME.NONE
+
+static func mime_to_string(mime: MIME, attributes := {}) -> String:
+	var s: String = MIME_DICT.get(mime, "")	
+	if s.is_empty():
+		return s
+	
+	for key in attributes:
+		"; " + key + "=" + str(attributes[key])
+	
+	return s
+
+static func mime_to_accept(mime: MIME, attributes := {}) -> String:
+	var s := HTTPManagerRequest.mime_to_string(mime, attributes)
+	if s.is_empty():
+		return s
+	return "Accept: " + s
+
+static func mime_to_content_type(mime: MIME, attributes := {}) -> String:
+	var s := HTTPManagerRequest.mime_to_string(mime, attributes)
+	if s.is_empty():
+		return s
+	return "Content-Type: " + s
+#endregion

@@ -54,13 +54,14 @@ var _queue_asc := false:
 		if _queue_asc != value:
 			_queue_asc = value
 			_queue.reverse()
+var tls_options: TLSOptions
 
 
-func process(delta: float) -> void:
+func process(delta: float) -> bool:
 	for c in _current_constraints():
 		if c.processing:
-			if c.process(delta) and not _queue.is_empty():
-				HTTPManager.next(self)
+			return c.process(delta) and not _queue.is_empty()
+	return false
 
 
 func clear() -> void:
@@ -84,8 +85,6 @@ func queue(r: HTTPManagerRequest) -> void:
 	
 	if i == qsize:
 		_queue.append(r)
-	
-	HTTPManager.next(self)
 
 
 func next() -> HTTPManagerRequest:
@@ -117,7 +116,7 @@ func apply_constraints(r: HTTPManagerRoute) -> void:
 
 
 func _current_constraints() -> Array[HTTPManagerConstraint]:
-	if constraint_current_set < 0 or constraint_current_set > constraint_sets.size():
+	if constraint_current_set < 0 or constraint_current_set >= constraint_sets.size():
 		return []
 	return constraint_sets[constraint_current_set].constraints
 

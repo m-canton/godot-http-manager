@@ -20,9 +20,9 @@ func _init_search_many() -> void:
 
 func _on_objects_requested() -> void:
 	#objects_button.disabled = true
-	var request: HTTPManagerRequest = get_node("/root/HTTPManager").create_request_from_route(RESTFUL_API_OBJECTS)
-	if request.start() == OK:
-		request.completed.connect(_on_objects_received)
+	var r := RESTFUL_API_OBJECTS.create_request()
+	if HTTPManager.request(r) == OK:
+		r.completed.connect(_on_objects_received)
 
 func _on_objects_received(response: HTTPManagerResponse) -> void:
 	#objects_button.disabled = false
@@ -156,7 +156,7 @@ func _on_create_or_update_object() -> void:
 	
 	if _editing_object.is_empty():
 		var request: HTTPManagerRequest = get_node("/root/HTTPManager").create_request_from_route(preload("res://addons/http_manager/test/restful_api/routes/objects_store.tres")) \
-				.with_body(validated_data, HTTPManagerRequest.ContentType.JSON)
+				.with_body(validated_data, HTTPManagerRequest.MIME.JSON)
 		
 		if request.start() == OK:
 			edit_button.disabled = true
@@ -165,7 +165,7 @@ func _on_create_or_update_object() -> void:
 	else:
 		var request: HTTPManagerRequest = get_node("/root/HTTPManager").create_request_from_route(preload("res://addons/http_manager/test/restful_api/routes/objects_update.tres"), {
 			id = _editing_object,
-		}).with_body(validated_data, HTTPManagerRequest.ContentType.JSON)
+		}).with_body(validated_data, HTTPManagerRequest.MIME.JSON)
 		
 		if request.start() == OK:
 			edit_button.disabled = true
