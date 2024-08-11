@@ -1,3 +1,4 @@
+@tool
 class_name HTTPManagerClient extends Resource
 
 ## HTTPManager Client resource.
@@ -14,20 +15,54 @@ enum ArrayParamFormat {
 	SPACE_SEPARATED, ## [code]foo=bar aux[/code]
 }
 
+enum BaseUrlInput {
+	FULL,
+	SPLIT,
+}
+
+@export var base_url_input := BaseUrlInput.FULL:
+	set(value):
+		if base_url_input != value:
+			base_url_input = value
+			if base_url_input == BaseUrlInput.FULL:
+				var s := host
+				if port != -1:
+					s += str(":", port)
+				if not prefix.is_empty():
+					s += prefix
+				base_url = s
+			notify_property_list_changed()
 ## Host or base url.
-@export var host := ""
+@export var base_url := "":
+	set(value):
+		if base_url != value:
+			base_url = value
+			_parse_base_url()
+@export var host := "":
+	set(value):
+		if host != value:
+			host = value
 ## Port.
-@export var port := -1
-## Maximum concurrent requests.
-@export_range(0, 10, 1, "or_greater") var max_concurrent_requests := 1
-## Maximum concurrent requests.
-@export_range(0, 10, 1, "or_greater") var max_concurrent_downloads := 1
+@export var port := -1:
+	set(value):
+		if port != value:
+			port = value
+## Route prefix. In API with base url "https://example.com/v2", prefix is "/v2".
+@export var prefix := "":
+	set(value):
+		if prefix != value:
+			prefix = value
+
 ## Headers that are added when request starts with this client.
 @export var headers: PackedStringArray = []
 ## Priority in HTTPManager to make requests.[br]
 ## [b]Note: [/b] It does nothing yet.
 ## @experimental
 @export var priority := 0
+## Maximum concurrent requests.
+@export_range(0, 10, 1, "or_greater") var max_concurrent_requests := 1
+## Maximum concurrent requests.
+@export_range(0, 10, 1, "or_greater") var max_concurrent_downloads := 1
 
 @export_group("Constraint", "constraint_")
 ## Active constraint set index. See [member constraint_sets].
@@ -62,6 +97,44 @@ func process(delta: float) -> bool:
 		if c.processing:
 			return c.process(delta) and not _queue.is_empty()
 	return false
+
+
+func _validate_property(property: Dictionary) -> void:
+	if property.name == "base_url":
+		if base_url_input == BaseUrlInput.SPLIT:
+			property.usage ^= PROPERTY_USAGE_EDITOR
+	elif property.name in ["host", "port", "prefix"]:
+		if base_url_input == BaseUrlInput.FULL:
+			property.usage ^= PROPERTY_USAGE_EDITOR
+
+
+func _parse_base_url() -> void:
+	var protocol := ""
+	var s := base_url.split("://", false, 1)
+	var ss := s.size()
+	if ss > 1:
+		protocol = s[0] + "://"
+		s[0] = s[1]
+	
+	if ss == 0:
+		host = protocol + ""
+		port = -1
+		prefix = ""
+	else:
+		s = s[0].split("/", false, 1)
+		print(s)
+		ss = s.size()
+		if ss == 0:
+			host = protocol + ""
+			port = -1
+			prefix = ""
+		else:
+			if ss > 1:
+				prefix = "/" + s[1]
+			s = s[0].split(":", false, 1)
+			ss = s.size()
+			port = s[1].to_int() if ss > 1 and s[1].is_valid_int() else -1
+			host = protocol + ("" if ss == 0 else s[0])
 
 
 func clear() -> void:

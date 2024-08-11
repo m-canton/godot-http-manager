@@ -119,6 +119,7 @@ func request(r: HTTPManagerRequest) -> Error:
 	
 	return OK
 
+## Async request to use with await.
 func fetch(r: HTTPManagerRequest) -> Variant:
 	if request(r) == OK:
 		var response: HTTPManagerResponse = await r.completed
@@ -171,8 +172,9 @@ func _on_failure(http_client: HTTPClient) -> void:
 	_http_clients.erase(http_client)
 	
 	var r: HTTPManagerResponse = http_client.get_meta(HTTP_CLIENT_META_RESPONSE)
+	r.headers = http_client.get_response_headers_as_dictionary()
 	r.code = http_client.get_response_code() as HTTPClient.ResponseCode
-	push_error("Request error with code:", r.code)
+	push_error("Request error with code: ", r.code)
 	http_client.get_meta(HTTP_CLIENT_META_REQUEST).complete(r)
 
 
