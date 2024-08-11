@@ -20,6 +20,8 @@ enum ArrayParamFormat {
 @export var port := -1
 ## Maximum concurrent requests.
 @export_range(0, 10, 1, "or_greater") var max_concurrent_requests := 1
+## Maximum concurrent requests.
+@export_range(0, 10, 1, "or_greater") var max_concurrent_downloads := 1
 ## Headers that are added when request starts with this client.
 @export var headers: PackedStringArray = []
 ## Priority in HTTPManager to make requests.[br]

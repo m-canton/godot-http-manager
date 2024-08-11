@@ -13,3 +13,7 @@ var _client: HTTPManagerClient
 
 func set_client(client: HTTPManagerClient) -> void:
 	_client = client
+
+
+func set_route() -> void:
+	pass
