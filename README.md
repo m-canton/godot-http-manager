@@ -20,6 +20,10 @@ func _request_posts() -> void:
 
 func _on_request_completed(response: HTTPManagerResponse) -> void:
     var data = response.parse()
+    if response.successful:
+        print(data)
+    else:
+        push_error("Request error.")
 ```
 
 See [wiki](https://github.com/m-canton/godot-http-manager/wiki) to know how to use this plugin.
