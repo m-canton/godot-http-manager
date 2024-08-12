@@ -54,7 +54,6 @@ static func string_to_type(mimetype: String) -> Type:
 	var i := mimetype.find(";")
 	if i != -1:
 		mimetype = mimetype.substr(0, i)
-		print(mimetype)
 	
 	var s := mimetype.split("/")
 	if s.size() != 2:

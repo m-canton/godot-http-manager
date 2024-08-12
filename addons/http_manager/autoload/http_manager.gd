@@ -99,6 +99,10 @@ func cancel_all(c: HTTPManagerClient) -> void:
 ## instead.
 ## @experimental
 func request(r: HTTPManagerRequest) -> Error:
+	if not r:
+		push_error("Request is null.")
+		return FAILED
+	
 	var route := r.route
 	if not route:
 		push_error("Request has null route.")
@@ -180,15 +184,17 @@ func _on_failure(http_client: HTTPClient) -> void:
 
 func _on_success(http_client: HTTPClient) -> void:
 	var r: HTTPManagerRequest = http_client.get_meta(HTTP_CLIENT_META_REQUEST)
+	var redirects: int = http_client.get_meta("redirects", 0)
+	
 	var response: HTTPManagerResponse = http_client.get_meta(HTTP_CLIENT_META_RESPONSE)
 	response.code = http_client.get_response_code() as HTTPClient.ResponseCode
 	response.headers = http_client.get_response_headers()
 	response.successful = true
 	
 	if response.code in [HTTPClient.RESPONSE_MOVED_PERMANENTLY, HTTPClient.RESPONSE_FOUND]:
-		var redirects: int = http_client.get_meta("redirects", 0)
 		if redirects >= r.route.client.max_redirects:
-			response.par = HTTPRequest.RESULT_REDIRECT_LIMIT_REACHED
+			push_warning("Max redirects reached.")
+			response.successful = false
 			r.complete(response)
 			return
 		
@@ -197,15 +203,36 @@ func _on_success(http_client: HTTPClient) -> void:
 			if h.begins_with("Location:"):
 				location = h.substr(9).strip_edges()
 		
-		if not location.is_empty():
+		if not location.is_empty() and _parse_url(http_client, location):
 			http_client.set_meta("redirects", redirects + 1)
 			http_client.close()
-			#TODO parse url
-			#http_client.connect_to_host
-			#return
+			http_client.set_meta("requesting", false)
+			var parsed_url: Array = http_client.get_meta("url")
+			var error := http_client.connect_to_host(parsed_url[0], parsed_url[1], r.tls_options)
+			if not error:
+				return
+			
+			response.successful = false
+			push_error(error_string(error))
 	
 	_http_clients.erase(http_client)
-	
 	r.complete(response)
-	
 	_next(r.route.client)
+
+
+## @experimental
+func _parse_url(http_client: HTTPClient, url: String) -> bool:
+	var re := RegEx.create_from_string("(?<host>https?:\\/\\/[a-zA-Z0-9\\.\\-]+)(:(?<port>[0-9]+))?(?<uri>.*)")
+	var result := re.search(url)
+	if not result:
+		push_error("Invalid URL: ", url)
+		return false
+	
+	var port_string := result.get_string("port")
+	http_client.set_meta("url", [
+		result.get_string("host"),
+		-1 if port_string.is_empty() else port_string.to_int(),
+		result.get_string("uri"),
+	])
+	
+	return true

@@ -20,6 +20,8 @@ enum BaseUrlInput {
 	SPLIT,
 }
 
+## Base URL input type.
+## @experimental
 @export var base_url_input := BaseUrlInput.FULL:
 	set(value):
 		if base_url_input != value:
@@ -32,22 +34,26 @@ enum BaseUrlInput {
 					s += prefix
 				base_url = s
 			notify_property_list_changed()
-## Host or base url.
+## Base URL.
 @export var base_url := "":
 	set(value):
 		if base_url != value:
 			base_url = value
 			_parse_base_url()
+## Host
+## @experimental
 @export var host := "":
 	set(value):
 		if host != value:
 			host = value
 ## Port.
+## @experimental
 @export var port := -1:
 	set(value):
 		if port != value:
 			port = value
 ## Route prefix. In API with base url "https://example.com/v2", prefix is "/v2".
+## @experimental
 @export var prefix := "":
 	set(value):
 		if prefix != value:
