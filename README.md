@@ -15,7 +15,7 @@ const ROUTE_WEBSITE_POSTS := preload("res://website/posts.tres")
 
 func _request_posts() -> void:
     var r := ROUTE_WEBSITE_POSTS.create_request({})
-    if HTTPManager.request(r) == OK:
+    if r and HTTPManager.request(r) == OK:
          r.completed.connect(_on_request_completed)
 
 func _on_request_completed(response: HTTPManagerResponse) -> void:
