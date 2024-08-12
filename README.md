@@ -14,7 +14,7 @@ extends Node
 const ROUTE_WEBSITE_POSTS := preload("res://website/posts.tres")
 
 func _request_posts() -> void:
-    var r := ROUTE_WEBSITE_POSTS.create_request({})
+    var r := ROUTE_WEBSITE_POSTS.create_request()
     if HTTPManager.request(r) == OK:
          r.completed.connect(_on_request_completed)
 
