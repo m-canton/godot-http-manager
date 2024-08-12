@@ -21,7 +21,7 @@ func _init_search_many() -> void:
 func _on_objects_requested() -> void:
 	#objects_button.disabled = true
 	var r := RESTFUL_API_OBJECTS.create_request()
-	if HTTPManager.request(r) == OK:
+	if get_node("/root/HTTPManager").request(r) == OK:
 		r.completed.connect(_on_objects_received)
 
 func _on_objects_received(response: HTTPManagerResponse) -> void:
@@ -57,12 +57,13 @@ func _on_object_id_submitted(text: String) -> void:
 		push_warning("'text' must not be empty.")
 		return
 	
-	var request: HTTPManagerRequest = get_node("/root/HTTPManager").create_request_from_route(preload("res://addons/http_manager/test/restful_api/routes/objects_show.tres"), {
+	var r := preload("res://addons/http_manager/test/restful_api/routes/objects_show.tres").create_request({
 		id = text,
 	})
-	if request.start() == OK:
+	
+	if get_node("/root/HTTPManager").request(r) == OK:
 		line_edit.editable = false
-		request.completed.connect(_on_object_received)
+		r.completed.connect(_on_object_received)
 
 func _on_object_received(response: HTTPManagerResponse) -> void:
 	line_edit.editable = true
@@ -155,10 +156,10 @@ func _on_create_or_update_object() -> void:
 		return
 	
 	if _editing_object.is_empty():
-		var r: HTTPManagerRequest = get_node("/root/HTTPManager").request(preload("res://addons/http_manager/test/restful_api/routes/objects_store.tres").create_request()) \
-				.with_body(validated_data, MIME.Type.JSON)
+		var r := preload("res://addons/http_manager/test/restful_api/routes/objects_store.tres") \
+				.create_request().with_body(validated_data, MIME.Type.JSON)
 		
-		if r and get_node("/root/HTTPManager").request(r) == OK:
+		if get_node("/root/HTTPManager").request(r) == OK:
 			edit_button.disabled = true
 			edit_reset_button.disabled = true
 			r.completed.connect(_on_object_updated)
@@ -167,7 +168,7 @@ func _on_create_or_update_object() -> void:
 			id = _editing_object,
 		}).with_body(validated_data, MIME.Type.JSON)
 		
-		if r and get_node("/root/HTTPManager").request(r) == OK:
+		if get_node("/root/HTTPManager").request(r) == OK:
 			edit_button.disabled = true
 			edit_reset_button.disabled = true
 			r.completed.connect(_on_object_updated)

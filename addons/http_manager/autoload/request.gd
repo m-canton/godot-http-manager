@@ -100,7 +100,7 @@ func set_url_params(dict: Dictionary) -> Error:
 			parsed_part = part
 		parsed_parts.append(parsed_part)
 	
-	_parsed_uri = route.client.prefix + "/".join(parsed_parts) + route.client.parse_query(dict)
+	_parsed_uri = "/".join(parsed_parts) + route.client.parse_query(dict)
 	
 	return OK
 

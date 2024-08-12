@@ -17,11 +17,7 @@ constraints = Array[ExtResource("2_5fwlb")]([SubResource("Resource_q8bal")])
 
 [resource]
 script = ExtResource("2_qtk8e")
-base_url_input = 0
 base_url = "https://api.restful-api.dev"
-host = "https://api.restful-api.dev"
-port = -1
-prefix = ""
 headers = PackedStringArray()
 max_redirects = 3
 max_concurrent_requests = 1

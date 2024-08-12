@@ -48,7 +48,7 @@ func _process(delta: float) -> void:
 				_on_success(hc)
 			else:
 				var r: HTTPManagerRequest = hc.get_meta(HTTP_CLIENT_META_REQUEST)
-				error = hc.request(r.route.method as HTTPClient.Method, r.get_parsed_uri(), r.headers, r.body)
+				error = hc.request(r.route.method as HTTPClient.Method, hc.get_meta("url")[2], r.headers, r.body)
 				if error:
 					_on_failure(hc)
 		elif status == HTTPClient.STATUS_DISCONNECTED:
@@ -144,7 +144,11 @@ func _next(c: HTTPManagerClient) -> Error:
 		return OK
 	
 	var hc := HTTPClient.new()
-	var error := hc.connect_to_host(r.route.client.host, r.route.client.port, r.tls_options)
+	if not _parse_url(hc, r.route.client.base_url + r.get_parsed_uri()):
+		return ERR_PARSE_ERROR
+	
+	var parsed_url := hc.get_meta("url")
+	var error := hc.connect_to_host(parsed_url[0], parsed_url[1], r.tls_options)
 	if error:
 		push_error(error_string(error))
 		return error

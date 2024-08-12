@@ -64,7 +64,7 @@ static func string_to_type(mimetype: String) -> Type:
 
 static func get_attributes(mimetype: String) -> Dictionary:
 	var attributes := {}
-	for part in mimetype.split(";", false):
+	for part in mimetype.split(";", false).slice(1):
 		var sp := part.split("=")
 		if sp.size() == 2:
 			attributes[sp[0].strip_edges()] = sp[1].strip_edges()

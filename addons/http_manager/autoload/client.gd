@@ -15,50 +15,9 @@ enum ArrayParamFormat {
 	SPACE_SEPARATED, ## [code]foo=bar aux[/code]
 }
 
-enum BaseUrlInput {
-	FULL,
-	SPLIT,
-}
-
-## Base URL input type.
-## @experimental
-@export var base_url_input := BaseUrlInput.FULL:
-	set(value):
-		if base_url_input != value:
-			base_url_input = value
-			if base_url_input == BaseUrlInput.FULL:
-				var s := host
-				if port != -1:
-					s += str(":", port)
-				if not prefix.is_empty():
-					s += prefix
-				base_url = s
-			notify_property_list_changed()
-## Base URL.
-@export var base_url := "":
-	set(value):
-		if base_url != value:
-			base_url = value
-			_parse_base_url()
-## Host
-## @experimental
-@export var host := "":
-	set(value):
-		if host != value:
-			host = value
-## Port.
-## @experimental
-@export var port := -1:
-	set(value):
-		if port != value:
-			port = value
-## Route prefix. In API with base url "https://example.com/v2", prefix is "/v2".
-## @experimental
-@export var prefix := "":
-	set(value):
-		if prefix != value:
-			prefix = value
-
+## Base URL. This string cannot end with [code]"/"[/code].[br]
+## [b]Example:[/b] [code]"http://localhost:8080/api"[/code].
+@export var base_url := ""
 ## Headers that are added when request starts with this client.
 @export var headers: PackedStringArray = []
 ## Maximum concurrent requests.
@@ -105,43 +64,6 @@ func process(delta: float) -> bool:
 		if c.processing:
 			return c.process(delta) and not _queue.is_empty()
 	return false
-
-
-func _validate_property(property: Dictionary) -> void:
-	if property.name == "base_url":
-		if base_url_input == BaseUrlInput.SPLIT:
-			property.usage ^= PROPERTY_USAGE_EDITOR
-	elif property.name in ["host", "port", "prefix"]:
-		if base_url_input == BaseUrlInput.FULL:
-			property.usage ^= PROPERTY_USAGE_EDITOR
-
-
-func _parse_base_url() -> void:
-	var protocol := ""
-	var s := base_url.split("://", false, 1)
-	var ss := s.size()
-	if ss > 1:
-		protocol = s[0] + "://"
-		s[0] = s[1]
-	
-	if ss == 0:
-		host = protocol + ""
-		port = -1
-		prefix = ""
-	else:
-		s = s[0].split("/", false, 1)
-		ss = s.size()
-		if ss == 0:
-			host = protocol + ""
-			port = -1
-			prefix = ""
-		else:
-			if ss > 1:
-				prefix = "/" + s[1]
-			s = s[0].split(":", false, 1)
-			ss = s.size()
-			port = s[1].to_int() if ss > 1 and s[1].is_valid_int() else -1
-			host = protocol + ("" if ss == 0 else s[0])
 
 
 func clear() -> void:
