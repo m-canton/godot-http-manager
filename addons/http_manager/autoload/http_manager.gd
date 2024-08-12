@@ -172,20 +172,40 @@ func _on_failure(http_client: HTTPClient) -> void:
 	_http_clients.erase(http_client)
 	
 	var r: HTTPManagerResponse = http_client.get_meta(HTTP_CLIENT_META_RESPONSE)
-	r.headers = http_client.get_response_headers_as_dictionary()
+	r.headers = http_client.get_response_headers()
 	r.code = http_client.get_response_code() as HTTPClient.ResponseCode
 	push_error("Request error with code: ", r.code)
 	http_client.get_meta(HTTP_CLIENT_META_REQUEST).complete(r)
 
 
 func _on_success(http_client: HTTPClient) -> void:
-	_http_clients.erase(http_client)
-	
 	var r: HTTPManagerRequest = http_client.get_meta(HTTP_CLIENT_META_REQUEST)
 	var response: HTTPManagerResponse = http_client.get_meta(HTTP_CLIENT_META_RESPONSE)
 	response.code = http_client.get_response_code() as HTTPClient.ResponseCode
-	response.headers = http_client.get_response_headers_as_dictionary()
+	response.headers = http_client.get_response_headers()
 	response.successful = true
+	
+	if response.code in [HTTPClient.RESPONSE_MOVED_PERMANENTLY, HTTPClient.RESPONSE_FOUND]:
+		var redirects: int = http_client.get_meta("redirects", 0)
+		if redirects >= r.route.client.max_redirects:
+			response.par = HTTPRequest.RESULT_REDIRECT_LIMIT_REACHED
+			r.complete(response)
+			return
+		
+		var location := ""
+		for h in response.headers:
+			if h.begins_with("Location:"):
+				location = h.substr(9).strip_edges()
+		
+		if not location.is_empty():
+			http_client.set_meta("redirects", redirects + 1)
+			http_client.close()
+			#TODO parse url
+			#http_client.connect_to_host
+			#return
+	
+	_http_clients.erase(http_client)
+	
 	r.complete(response)
 	
 	_next(r.route.client)

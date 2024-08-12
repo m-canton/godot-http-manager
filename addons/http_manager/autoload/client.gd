@@ -55,14 +55,16 @@ enum BaseUrlInput {
 
 ## Headers that are added when request starts with this client.
 @export var headers: PackedStringArray = []
-## Priority in HTTPManager to make requests.[br]
-## [b]Note: [/b] It does nothing yet.
-## @experimental
-@export var priority := 0
+## Maximum concurrent requests.
+@export_range(0, 10, 1, "or_greater") var max_redirects := 3
 ## Maximum concurrent requests.
 @export_range(0, 10, 1, "or_greater") var max_concurrent_requests := 1
 ## Maximum concurrent requests.
 @export_range(0, 10, 1, "or_greater") var max_concurrent_downloads := 1
+## Priority in HTTPManager to make requests.[br]
+## [b]Note: [/b] It does nothing yet.
+## @experimental
+@export var priority := 0
 
 @export_group("Constraint", "constraint_")
 ## Active constraint set index. See [member constraint_sets].

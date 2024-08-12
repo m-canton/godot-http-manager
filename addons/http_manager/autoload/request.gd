@@ -106,7 +106,7 @@ func set_url_params(dict: Dictionary) -> Error:
 
 ## Use only Array, Dictionary or String. Don't use Packed*Array types.
 ## @experimental
-func with_body(b, content_type := MIME.NONE) -> HTTPManagerRequest:
+func with_body(b, mimetype: MIME.Type) -> HTTPManagerRequest:
 	if b is Array or b is Dictionary:
 		body = JSON.stringify(b, "", false)
 	elif b is String:
@@ -118,53 +118,12 @@ func with_body(b, content_type := MIME.NONE) -> HTTPManagerRequest:
 		if h.begins_with("Content-Type:"):
 			return self
 	
-	var mimetype := ""
-	if content_type == MIME.JSON:
-		mimetype = "application/json"
-	
-	if not mimetype.is_empty():
-		headers.append("Content-Type: " + mimetype)
+	if mimetype != MIME.Type.NONE:
+		for i in range(headers.size()):
+			if headers[i].begins_with("Content-Type:"):
+				headers.remove_at(i)
+				break
+		body = MIME.var_to_string(b, mimetype)
+		headers.append("Content-Type: " + MIME.type_to_string(mimetype))
 	
 	return self
-
-#region MIME
-enum MIME {
-	NONE,
-	JSON,
-	PNG,
-}
-
-const MIME_DICT := {
-	MIME.NONE: "",
-	MIME.JSON: "application/json",
-	MIME.PNG: "image/png",
-}
-
-static func string_to_mime(s: String) -> MIME:
-	for key in MIME_DICT:
-		if MIME_DICT[key] == s:
-			return key
-	return MIME.NONE
-
-static func mime_to_string(mime: MIME, attributes := {}) -> String:
-	var s: String = MIME_DICT.get(mime, "")	
-	if s.is_empty():
-		return s
-	
-	for key in attributes:
-		"; " + key + "=" + str(attributes[key])
-	
-	return s
-
-static func mime_to_accept(mime: MIME, attributes := {}) -> String:
-	var s := HTTPManagerRequest.mime_to_string(mime, attributes)
-	if s.is_empty():
-		return s
-	return "Accept: " + s
-
-static func mime_to_content_type(mime: MIME, attributes := {}) -> String:
-	var s := HTTPManagerRequest.mime_to_string(mime, attributes)
-	if s.is_empty():
-		return s
-	return "Content-Type: " + s
-#endregion

@@ -4,11 +4,6 @@ class_name HTTPManagerRoute extends Resource
 ## 
 ## Defines a client route to use with HTTPManagerRequest.
 
-## JSON MIME type.
-const MIMETYPE_JSON := "application/json"
-## Url encoded MIME type.
-const MIMETYPE_URL_ENCODED := "application/x-www-form-urlencoded"
-
 ## Method enums. See [enum HTTPClient.Method].
 enum Method {
 	GET,
@@ -40,7 +35,7 @@ enum Method {
 
 ## Creates a request to this route. Method name can change.
 ## @experimental
-func create_request(url_params := {}, body = null, body_type := HTTPManagerRequest.MIME.NONE) -> HTTPManagerRequest:
+func create_request(url_params := {}, body = null, body_type := MIME.Type.NONE) -> HTTPManagerRequest:
 	var r := HTTPManagerRequest.new()
 	
 	if not client:
@@ -60,7 +55,7 @@ func create_request(url_params := {}, body = null, body_type := HTTPManagerReque
 	if r.set_url_params(url_params):
 		return null
 	
-	if body_type != HTTPManagerRequest.MIME.NONE:
+	if body_type != MIME.Type.NONE:
 		r.with_body(body, body_type)
 	
 	return r

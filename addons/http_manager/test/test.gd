@@ -155,22 +155,22 @@ func _on_create_or_update_object() -> void:
 		return
 	
 	if _editing_object.is_empty():
-		var request: HTTPManagerRequest = get_node("/root/HTTPManager").create_request_from_route(preload("res://addons/http_manager/test/restful_api/routes/objects_store.tres")) \
-				.with_body(validated_data, HTTPManagerRequest.MIME.JSON)
+		var r: HTTPManagerRequest = get_node("/root/HTTPManager").request(preload("res://addons/http_manager/test/restful_api/routes/objects_store.tres").create_request()) \
+				.with_body(validated_data, MIME.Type.JSON)
 		
-		if request.start() == OK:
+		if r and get_node("/root/HTTPManager").request(r) == OK:
 			edit_button.disabled = true
 			edit_reset_button.disabled = true
-			request.completed.connect(_on_object_updated)
+			r.completed.connect(_on_object_updated)
 	else:
-		var request: HTTPManagerRequest = get_node("/root/HTTPManager").create_request_from_route(preload("res://addons/http_manager/test/restful_api/routes/objects_update.tres"), {
+		var r: HTTPManagerRequest = preload("res://addons/http_manager/test/restful_api/routes/objects_update.tres").create_request({
 			id = _editing_object,
-		}).with_body(validated_data, HTTPManagerRequest.MIME.JSON)
+		}).with_body(validated_data, MIME.Type.JSON)
 		
-		if request.start() == OK:
+		if r and get_node("/root/HTTPManager").request(r) == OK:
 			edit_button.disabled = true
 			edit_reset_button.disabled = true
-			request.completed.connect(_on_object_updated)
+			r.completed.connect(_on_object_updated)
 
 func _validate(validated_data: Dictionary) -> Error:
 	validated_data["name"] = name_line_edit.text
