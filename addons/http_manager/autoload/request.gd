@@ -2,11 +2,24 @@ class_name HTTPManagerRequest extends RefCounted
 
 signal completed(response: HTTPManagerResponse)
 
+static var http_manager: Node
+
 ## HTTPManager Request class.
 ## 
 ## This class requests from a [HTTPManagerRoute] according to client
 ## restrictions. Use [method create_from_route] to create a instance because
 ## it adds the client and route headers to this and sets the route for you.
+
+enum Mode {
+	DEFAULT,
+	FETCH,
+}
+
+enum Listener {
+	COMPLETE,
+	SUCCESS,
+	FAILURE,
+}
 
 ## Route resource.
 var route: HTTPManagerRoute
@@ -18,6 +31,8 @@ var headers := PackedStringArray()
 var use_auth := false
 ## Body.
 var body := ""
+## Mode.
+var mode := Mode.DEFAULT
 ## Parsed URI.
 var _parsed_uri := ""
 
@@ -28,6 +43,16 @@ var tls_options: TLSOptions
 ## response is completed or gets a error.
 func complete(response: HTTPManagerResponse) -> void:
 	completed.emit(response)
+	var listeners: Dictionary = get_meta("listeners", {})
+	for key in listeners:
+		if key == Listener.COMPLETE:
+			listeners[key].call(response)
+		elif key == Listener.SUCCESS:
+			if response.successful:
+				listeners[key].call(response)
+		elif key == Listener.FAILURE:
+			if not response.successful:
+				listeners[key].call(response)
 
 ## Get endpoint uri with url params.
 func get_parsed_uri() -> String:
@@ -35,24 +60,29 @@ func get_parsed_uri() -> String:
 		return _parsed_uri
 	return ""
 
-#region Authentication
-## Adds Basic Authentication header.
-func with_basic_auth(username: String, password: String) -> HTTPManagerRequest:
-	_with_auth("Basic " + Marshalls.utf8_to_base64(username + ":" + password))
+func add_header(new_header: String) -> HTTPManagerRequest:
+	headers.append(new_header)
 	return self
 
-func with_bearer_auth(token: String) -> HTTPManagerRequest:
-	_with_auth("Bearer " + token)
+#region Authentication
+## Adds Basic Authentication header.
+func set_basic_auth(username: String, password: String) -> HTTPManagerRequest:
+	_set_auth("Basic " + Marshalls.utf8_to_base64(username + ":" + password))
+	return self
+
+## Adds Bearer Authentication header.
+func set_bearer_auth(token: String) -> HTTPManagerRequest:
+	_set_auth("Bearer " + token)
 	return self
 
 ## Adds Basic Authentication header. Not implementet yet.
 ## @experimental
-func with_diggest_auth(_username: String, _password: String) -> HTTPManagerRequest:
+func set_diggest_auth(_username: String, _password: String) -> HTTPManagerRequest:
 	push_error("Not implemented yet.")
 	return self
 
 ## Adds Authorization header.
-func _with_auth(type_credentials_string: String) -> void:
+func _set_auth(type_credentials_string: String) -> void:
 	headers.append("Authorization: " + type_credentials_string)
 	use_auth = true
 #endregion
@@ -104,26 +134,41 @@ func set_url_params(dict: Dictionary) -> Error:
 	
 	return OK
 
-## Use only Array, Dictionary or String. Don't use Packed*Array types.
-## @experimental
-func with_body(b, mimetype: MIME.Type) -> HTTPManagerRequest:
-	if b is Array or b is Dictionary:
-		body = JSON.stringify(b, "", false)
-	elif b is String:
-		body = b
-	else:
-		push_warning("Not valid body")
-	
-	for h in headers:
-		if h.begins_with("Content-Type:"):
-			return self
-	
-	if mimetype != MIME.Type.NONE:
+## Formats and sets a body. See [method MIME.var_to_string].
+func set_body(new_body, content_type := MIME.Type.NONE, attributes := {}) -> HTTPManagerRequest:
+	if content_type != MIME.Type.NONE:
 		for i in range(headers.size()):
 			if headers[i].begins_with("Content-Type:"):
 				headers.remove_at(i)
 				break
-		body = MIME.var_to_string(b, mimetype)
-		headers.append("Content-Type: " + MIME.type_to_string(mimetype))
+		
+		body = MIME.var_to_string(new_body, content_type)
+		headers.append("Content-Type: " + MIME.type_to_string(content_type))
+	elif new_body is String:
+		body = new_body
 	
 	return self
+
+## Starts request.
+func start(listeners = {}) -> Error:
+	if not http_manager:
+		push_error("HTTPManager is disabled.")
+		return FAILED
+	
+	if listeners is Callable:
+		set_meta("listeners", {
+			Listener.COMPLETE: listeners,
+		})
+	elif listeners is Array:
+		var dict := {}
+		var ls: int = listeners.size()
+		if ls > 0:
+			if listeners[0] is Callable:
+				dict[Listener.SUCCESS] = listeners[0]
+		if ls > 1:
+			if listeners[1] is Callable:
+				dict[Listener.FAILURE] = listeners[1]
+	elif listeners is Dictionary:
+		set_meta("listeners", listeners)
+	
+	return http_manager.request(self)

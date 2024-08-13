@@ -7,6 +7,7 @@
 script = ExtResource("2_hj2s7")
 client = ExtResource("1_luitr")
 uri_pattern = "/objects/{id}"
-headers = null
+description = ""
+headers = []
 method = 8
 priority = 0

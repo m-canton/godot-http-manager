@@ -19,13 +19,11 @@ func _init_search_many() -> void:
 	objects_button.pressed.connect(_on_objects_requested)
 
 func _on_objects_requested() -> void:
-	#objects_button.disabled = true
-	var r := RESTFUL_API_OBJECTS.create_request()
-	if get_node("/root/HTTPManager").request(r) == OK:
-		r.completed.connect(_on_objects_received)
+	if RESTFUL_API_OBJECTS.create_request().start(_on_objects_received) == OK:
+		objects_button.disabled = true
 
 func _on_objects_received(response: HTTPManagerResponse) -> void:
-	#objects_button.disabled = false
+	objects_button.disabled = false
 	if response.successful:
 		var objects = response.parse()
 		if objects is Array:
@@ -43,6 +41,8 @@ func _on_objects_received(response: HTTPManagerResponse) -> void:
 
 
 #region Search One
+const OBJECTS_SHOW = preload("res://addons/http_manager/test/restful_api/routes/objects_show.tres")
+
 @onready var line_edit: LineEdit = $MarginContainer/HBoxContainer/ObjectsShow/LineEdit
 @onready var searched_object_card: PanelContainer = $MarginContainer/HBoxContainer/ObjectsShow/ObjectCard
 
@@ -57,13 +57,10 @@ func _on_object_id_submitted(text: String) -> void:
 		push_warning("'text' must not be empty.")
 		return
 	
-	var r := preload("res://addons/http_manager/test/restful_api/routes/objects_show.tres").create_request({
+	if OBJECTS_SHOW.create_request({
 		id = text,
-	})
-	
-	if get_node("/root/HTTPManager").request(r) == OK:
+	}).start(_on_object_received) == OK:
 		line_edit.editable = false
-		r.completed.connect(_on_object_received)
 
 func _on_object_received(response: HTTPManagerResponse) -> void:
 	line_edit.editable = true
@@ -83,6 +80,8 @@ func _on_object_received(response: HTTPManagerResponse) -> void:
 
 #region Edit
 const OBJECT_DATA_FIELD = preload("res://addons/http_manager/test/object_data_field.tscn")
+const OBJECTS_STORE = preload("res://addons/http_manager/test/restful_api/routes/objects_store.tres")
+const OBJECTS_UPDATE = preload("res://addons/http_manager/test/restful_api/routes/objects_update.tres")
 
 var _editing_object := "":
 	set(value):
@@ -156,22 +155,17 @@ func _on_create_or_update_object() -> void:
 		return
 	
 	if _editing_object.is_empty():
-		var r := preload("res://addons/http_manager/test/restful_api/routes/objects_store.tres") \
-				.create_request().with_body(validated_data, MIME.Type.JSON)
-		
-		if get_node("/root/HTTPManager").request(r) == OK:
+		if OBJECTS_STORE.create_request() \
+				.set_body(validated_data, MIME.Type.JSON) \
+				.start(_on_object_updated) == OK:
 			edit_button.disabled = true
 			edit_reset_button.disabled = true
-			r.completed.connect(_on_object_updated)
 	else:
-		var r: HTTPManagerRequest = preload("res://addons/http_manager/test/restful_api/routes/objects_update.tres").create_request({
+		if OBJECTS_UPDATE.create_request({
 			id = _editing_object,
-		}).with_body(validated_data, MIME.Type.JSON)
-		
-		if get_node("/root/HTTPManager").request(r) == OK:
+		}, validated_data, MIME.Type.JSON).start(_on_object_updated) == OK:
 			edit_button.disabled = true
 			edit_reset_button.disabled = true
-			r.completed.connect(_on_object_updated)
 
 func _validate(validated_data: Dictionary) -> Error:
 	validated_data["name"] = name_line_edit.text

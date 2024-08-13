@@ -35,11 +35,11 @@ enum Method {
 
 ## Creates a request to this route. Method name can change.
 ## @experimental
-func create_request(url_params := {}, body = null, body_type := MIME.Type.NONE) -> HTTPManagerRequest:
+func create_request(url_params := {}, body = null, content_type := MIME.Type.NONE) -> HTTPManagerRequest:
 	var r := HTTPManagerRequest.new()
 	
 	if not client:
-		push_error("Creating a request from route with  null client.")
+		push_error("Creating a request from route with null client.")
 		return null
 	
 	r.route = self
@@ -55,7 +55,6 @@ func create_request(url_params := {}, body = null, body_type := MIME.Type.NONE) 
 	if r.set_url_params(url_params):
 		return null
 	
-	if body_type != MIME.Type.NONE:
-		r.with_body(body, body_type)
+	r.set_body(body, content_type)
 	
 	return r

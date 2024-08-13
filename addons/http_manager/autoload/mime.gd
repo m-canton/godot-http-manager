@@ -2,9 +2,8 @@ class_name MIME extends RefCounted
 
 ## Content Parser using MIME type.
 ## 
-## 
+## This class supports some MIME types. More support will be added.
 
-#region MIMEType
 ## MIME Types
 enum Type {
 	NONE,
@@ -107,7 +106,7 @@ static func buffer_to_var(buffer: PackedByteArray, type := Type.NONE, attributes
 ## Converts variant to buffer.
 static func var_to_buffer(value, type := Type.NONE, attributes := {}) -> PackedByteArray:
 	if type == Type.JSON:
-		return JSON.stringify(value).to_utf8_buffer()
+		return var_to_string(value).to_utf8_buffer()
 	elif type == Type.JPG:
 		if value is Texture2D:
 			value = value.get_image()
@@ -123,11 +122,22 @@ static func var_to_buffer(value, type := Type.NONE, attributes := {}) -> PackedB
 			value = value.get_image()
 		if value is Image:
 			return value.save_jpg_to_buffer()
+	else:
+		push_warning("This variant cannot be converted to a buffer.")
 	return []
 
 ## Converts variant to string.
 static func var_to_string(value, type := Type.NONE, attributes := {}) -> String:
 	if type == Type.JSON:
-		return value if value is String else JSON.stringify(value)
+		return value if value is String else JSON.stringify(value, "", false)
+	elif type == Type.JPG:
+		return Marshalls.raw_to_base64(value if value is PackedByteArray else var_to_buffer(value, type, attributes))
+	elif type == Type.PNG:
+		return Marshalls.raw_to_base64(value if value is PackedByteArray else var_to_buffer(value, type, attributes))
+	elif type == Type.WEBP:
+		return Marshalls.raw_to_base64(value if value is PackedByteArray else var_to_buffer(value, type, attributes))
+	elif value is String:
+		return value
+	else:
+		push_warning("This variant cannot be converted to a string.")
 	return ""
-#endregion

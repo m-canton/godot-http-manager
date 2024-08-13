@@ -26,6 +26,7 @@ var _http_clients: Array[HTTPClient] = []
 
 func _ready() -> void:
 	set_process(false)
+	HTTPManagerRequest.http_manager = self
 
 
 func _process(delta: float) -> void:
