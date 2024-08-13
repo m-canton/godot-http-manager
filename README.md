@@ -14,7 +14,7 @@ extends Node
 const ROUTE := preload("res://path/to/route.tres")
 
 func _request_posts() -> void:
-    if ROUTE.create_request().start(_on_request_completed)
+    ROUTE.create_request().start(_on_request_completed)
 
 func _on_request_completed(response: HTTPManagerResponse) -> void:
     var data = response.parse()
