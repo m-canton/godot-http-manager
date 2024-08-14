@@ -3,7 +3,7 @@ class_name HTTPManagerController extends RefCounted
 ## HTTPManager Controller.
 ## 
 ## [b]Work in progress.[/b] This class is to extend it and define routes to
-## request them.
+## request them. An alternative to defining clients and routes via gdscript.
 ## 
 ## @experimental
 

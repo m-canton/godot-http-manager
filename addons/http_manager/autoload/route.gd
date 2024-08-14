@@ -24,6 +24,7 @@ enum Method {
 ## [b]Example:[/b] [code]/objects/{id}/{edit?}[/code]. [code]id[/code] is
 ## required but [code]edit[/code] is optional (closed with [code]?}[/code]).
 @export var uri_pattern := ""
+## Route description or notes.
 @export_multiline var description := ""
 ## Default headers for this route.
 @export var headers: PackedStringArray = []
