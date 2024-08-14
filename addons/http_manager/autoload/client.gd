@@ -18,6 +18,8 @@ enum ArrayParamFormat {
 ## Base URL. This string cannot end with [code]"/"[/code].[br]
 ## [b]Example:[/b] [code]"http://localhost:8080/api"[/code].
 @export var base_url := ""
+## Client description or notes.
+@export_multiline var description := ""
 ## Headers that are added when request starts with this client.
 @export var headers: PackedStringArray = []
 ## Maximum concurrent requests.
