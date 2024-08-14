@@ -130,6 +130,8 @@ static func var_to_buffer(value, type := Type.NONE, attributes := {}) -> PackedB
 static func var_to_string(value, type := Type.NONE, attributes := {}) -> String:
 	if type == Type.JSON:
 		return value if value is String else JSON.stringify(value, "", false)
+	elif type == Type.URL_ENCODED:
+		return value if value is String else ""
 	elif type == Type.JPG:
 		return Marshalls.raw_to_base64(value if value is PackedByteArray else var_to_buffer(value, type, attributes))
 	elif type == Type.PNG:

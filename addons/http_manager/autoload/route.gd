@@ -38,23 +38,23 @@ enum Method {
 func create_request(url_params := {}, body = null, content_type := MIME.Type.NONE) -> HTTPManagerRequest:
 	var r := HTTPManagerRequest.new()
 	
-	if not client:
-		push_error("Creating a request from route with null client.")
-		return null
-	
 	r.route = self
 	
 	for h in headers:
 		if not h in r.headers:
 			r.headers.append(h)
 	
+	if not client:
+		r.valid = false
+		return r
+	
 	for h in client.headers:
 		if not h in r.headers:
 			r.headers.append(h)
 	
-	if r.set_url_params(url_params):
-		return null
-	
-	r.set_body(body, content_type)
+	if r.set_url_params(url_params) == OK:
+		r.set_body(body, content_type)
+	else:
+		r.valid = false
 	
 	return r

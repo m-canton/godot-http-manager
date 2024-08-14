@@ -33,8 +33,12 @@ var use_auth := false
 var body := ""
 ## Mode.
 var mode := Mode.DEFAULT
+## Indicates if this request is valid.
+var valid := true
 ## Parsed URI.
 var _parsed_uri := ""
+## OAuth 2.0.
+var _oauth2: HTTPOAuth2
 
 ## TLS Options.
 var tls_options: TLSOptions
@@ -60,13 +64,12 @@ func get_parsed_uri() -> String:
 		return _parsed_uri
 	return ""
 
-func add_header(new_header: String) -> HTTPManagerRequest:
-	headers.append(new_header)
-	return self
+func get_url() -> String:
+	return (route.client.base_url + _parsed_uri) if route and route.client else ""
 
 #region Authentication
 ## Adds Basic Authentication header.
-func set_basic_auth(username: String, password: String) -> HTTPManagerRequest:
+func set_basic_auth(username: String, password := "") -> HTTPManagerRequest:
 	_set_auth("Basic " + Marshalls.utf8_to_base64(username + ":" + password))
 	return self
 
@@ -86,6 +89,11 @@ func _set_auth(type_credentials_string: String) -> void:
 	headers.append("Authorization: " + type_credentials_string)
 	use_auth = true
 #endregion
+
+#region Setting Properties
+func add_header(new_header: String) -> HTTPManagerRequest:
+	headers.append(new_header)
+	return self
 
 ## [method HTTPManager.create_request_from_route] calls this method to parse and
 ## add the url params.
@@ -149,6 +157,17 @@ func set_body(new_body, content_type := MIME.Type.NONE, attributes := {}) -> HTT
 	
 	return self
 
+func set_json_body(new_body) -> HTTPManagerRequest:
+	return set_body(new_body, MIME.Type.JSON)
+
+func set_urlencoded_body(new_body: Dictionary) -> HTTPManagerRequest:
+	if route and route.client:
+		return set_body(route.client.parse_query(new_body).substr(1), MIME.Type.URL_ENCODED)
+	
+	push_warning("No client.")
+	return self
+#endregion
+
 ## Starts request.
 func start(listeners = {}) -> Error:
 	if not http_manager:
@@ -172,3 +191,26 @@ func start(listeners = {}) -> Error:
 		set_meta("listeners", listeners)
 	
 	return http_manager.request(self)
+
+func oauth2(port: int, bind_adress := "127.0.0.1") -> Error:
+	_oauth2 = HTTPOAuth2.new()
+	
+	var error := _oauth2.start(port, bind_adress)
+	if error:
+		return error
+	
+	error = start()
+	if error:
+		_oauth2.stop()
+		return error
+	
+	return OK
+
+## Opens the URL with OS shell.
+func shell() -> Error:
+	var s := get_url()
+	if s.is_empty():
+		push_error("URL is not valid.")
+		return FAILED
+	
+	return OS.shell_open(get_url())

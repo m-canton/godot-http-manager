@@ -96,12 +96,16 @@ func cancel_all(c: HTTPManagerClient) -> void:
 			c.clear()
 #endregion
 
-## Do not call this method. Use [method HTTPManager.create_request_from_route]
+## Do not call this method. Use [method HTTPManagerRoute.create_request]
 ## instead.
 ## @experimental
 func request(r: HTTPManagerRequest) -> Error:
 	if not r:
 		push_error("Request is null.")
+		return FAILED
+	
+	if not r.valid:
+		push_error("Request is not valid.")
 		return FAILED
 	
 	var route := r.route
@@ -176,7 +180,7 @@ func set_tls_options(client: HTTPManagerClient, tls_options: TLSOptions) -> Erro
 	client.tls_options = tls_options
 	return OK
 
-
+## Called on request failure.
 func _on_failure(http_client: HTTPClient) -> void:
 	_http_clients.erase(http_client)
 	
@@ -186,7 +190,7 @@ func _on_failure(http_client: HTTPClient) -> void:
 	push_error("Request error with code: ", r.code)
 	http_client.get_meta(HTTP_CLIENT_META_REQUEST).complete(r)
 
-
+## Called on request success.
 func _on_success(http_client: HTTPClient) -> void:
 	var r: HTTPManagerRequest = http_client.get_meta(HTTP_CLIENT_META_REQUEST)
 	var redirects: int = http_client.get_meta("redirects", 0)
@@ -196,7 +200,7 @@ func _on_success(http_client: HTTPClient) -> void:
 	response.headers = http_client.get_response_headers()
 	response.successful = true
 	
-	if response.code in [HTTPClient.RESPONSE_MOVED_PERMANENTLY, HTTPClient.RESPONSE_FOUND]:
+	if response.code in [HTTPClient.RESPONSE_MOVED_PERMANENTLY, HTTPClient.RESPONSE_FOUND, HTTPClient.RESPONSE_SEE_OTHER]:
 		if redirects >= r.route.client.max_redirects:
 			push_warning("Max redirects reached.")
 			response.successful = false
@@ -224,8 +228,7 @@ func _on_success(http_client: HTTPClient) -> void:
 	r.complete(response)
 	_next(r.route.client)
 
-
-## @experimental
+## Parses the URL.
 func _parse_url(http_client: HTTPClient, url: String) -> bool:
 	var re := RegEx.create_from_string("(?<host>https?:\\/\\/[a-zA-Z0-9\\.\\-]+)(:(?<port>[0-9]+))?(?<uri>.*)")
 	var result := re.search(url)
