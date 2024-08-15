@@ -25,10 +25,21 @@ var bind_address := "*"
 var _redirect_server := TCPServer.new()
 ## Loads local HTML file to display in the redirect URI: <bind_address>:<port>
 var _redirect_html := ""
+## Timeout
+var _duration := 120.0
+## Current time
+var _time := 0.0
 
 
-func _process(_delta: float) -> void:
-	if _redirect_server.is_connection_available():
+func _process(delta: float) -> void:
+	_time += delta
+	if _time >= _duration:
+		push_warning("OAuth 2.0 Timeout")
+		var response := HTTPManagerResponse.new()
+		response.successful = false
+		request.complete(response)
+		queue_free()
+	elif _redirect_server.is_connection_available():
 		var connection := _redirect_server.take_connection()
 		var crequest := connection.get_string(connection.get_available_bytes())
 		if not crequest.is_empty():
@@ -48,8 +59,18 @@ func set_redirect_html(redirect_html: String) -> HTTPOAuth2:
 	_redirect_html = redirect_html
 	return self
 
-
+## Starts the OAuth 2.0. Frees other HTTPOAuth2.
 func start(on_complete = null) -> Error:
+	if not HTTPManagerRequest.http_manager:
+		push_error("HTTPManager is not started.")
+		queue_free()
+		return FAILED
+	
+	# One OAuth 2.0
+	for c in HTTPManagerRequest.http_manager.get_children():
+		if c is HTTPOAuth2:
+			c.queue_free()
+	
 	HTTPManagerRequest.http_manager.add_child(self)
 	
 	if on_complete is Callable:
@@ -57,11 +78,9 @@ func start(on_complete = null) -> Error:
 	
 	var error := _redirect_server.listen(port, bind_address)
 	if error:
+		push_error("It cannot listen the port.")
 		queue_free()
 		return error
-	
-	if not HTTPManagerRequest.http_manager:
-		push_error("HTTPManager is not started.")
 	
 	error = request.shell()
 	if error:
