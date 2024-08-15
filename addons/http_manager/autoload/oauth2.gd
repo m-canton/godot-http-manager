@@ -1,6 +1,11 @@
 class_name HTTPOAuth2 extends Resource
 
 
+enum PCKEMethod {
+	PLAIN,
+	S256,
+}
+
 var processing := false
 var weak_request: WeakRef
 var port := 0
@@ -42,3 +47,36 @@ func start() -> Error:
 	
 	var request: HTTPManagerRequest = weak_request.get_ref()
 	return request.start()
+
+
+## Generates a random PCKE code verifier.
+## [b]ASCII:[/b] 45: -, 46: ., 48-57: 0-9, 65-90: A-Z, 95: _, 97-122: a-z, 126: ~
+static func pcke_codes(length := 43, method := PCKEMethod.S256) -> Dictionary:
+	var s := ""
+	length = clamp(length, 43, 128)
+	
+	var i := 0
+	while i < length:
+		var ci := randi_range(0, 65)
+		if ci < 2:
+			ci += 45
+		elif ci < 12:
+			ci += 46
+		elif ci < 38:
+			ci += 53
+		elif ci == 38:
+			ci = 95
+		elif ci < 65:
+			ci += 58
+		else:
+			ci = 126
+		s += char(ci)
+		i += 1
+	
+	if method == PCKEMethod.S256:
+		return {
+			verifier = s,
+			challenge = Marshalls.utf8_to_base64(s.sha256_text()),
+		}
+	else:
+		return { challenge = s }
