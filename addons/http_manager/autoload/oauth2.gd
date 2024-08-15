@@ -79,4 +79,4 @@ static func pcke_codes(length := 43, method := PCKEMethod.S256) -> Dictionary:
 			challenge = Marshalls.utf8_to_base64(s.sha256_text()),
 		}
 	else:
-		return { challenge = s }
+		return { verifier = s }
