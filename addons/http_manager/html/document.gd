@@ -65,31 +65,31 @@ func newline() -> HTMLDocument:
 	return self
 
 
-func push_p(attributes := {}, options := {}) -> HTMLDocument:
+func start_p(attributes := {}, options := {}) -> HTMLDocument:
 	options["inline"] = options.get("inline", true)
-	return push_tag("p", attributes, options)
+	return start_tag("p", attributes, options)
 
 
-func push_body(attributes := {}) -> HTMLDocument:
-	return newline().push_tag("body", attributes)
+func start_body(attributes := {}) -> HTMLDocument:
+	return newline().start_tag("body", attributes)
 
 
-func push_html(attributes := {}) -> HTMLDocument:
-	return push_tag("html", attributes, { indent = 0 }).newline()
+func start_html(attributes := {}) -> HTMLDocument:
+	return start_tag("html", attributes, { indent = 0 }).newline()
 
 
-func push_head(attributes := {}) -> HTMLDocument:
-	return push_tag("head", attributes)
+func start_head(attributes := {}) -> HTMLDocument:
+	return start_tag("head", attributes)
 
 
-func push_header(level := 1, attributes := {}, options := {}) -> HTMLDocument:
+func start_header(level := 1, attributes := {}, options := {}) -> HTMLDocument:
 	options["inline"] = options.get("inline", true)
-	push_tag(str("h", clamp(level, 1, 6)), attributes, options)
+	start_tag(str("h", clamp(level, 1, 6)), attributes, options)
 	return self
 
 
 ## Adds a block tag in the current open tag.
-func push_tag(name: String, attributes := {}, options := {}) -> HTMLDocument:
+func start_tag(name: String, attributes := {}, options := {}) -> HTMLDocument:
 	text += str(INDENT_CHAR.repeat(_indent), "<", name, HTML.attributes_to_string(attributes, true), ">")
 	
 	_inline = options.get("inline", false)
@@ -101,7 +101,7 @@ func push_tag(name: String, attributes := {}, options := {}) -> HTMLDocument:
 	return self
 
 ## Closes the last opent tag. See [member _open_tags].
-func pop() -> HTMLDocument:
+func close_tag() -> HTMLDocument:
 	var n := _open_tags.size()
 	if n == 0:
 		push_warning("No open tags.")
