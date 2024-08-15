@@ -29,4 +29,4 @@ See [wiki](https://github.com/m-canton/godot-http-manager/wiki) to know how to u
 
 ## Requirements
 
-- Godot version: 4.2.x, 4.3.x
+- Godot version: 4.3
