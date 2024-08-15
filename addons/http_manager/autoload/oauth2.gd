@@ -19,7 +19,7 @@ var bind_address := "*"
 var _redirect_server := TCPServer.new()
 var _redirect_uri := ""
 ## Loads local HTML file to display in the redirect URI: <bind_address>:<port>
-var _redirect_html_path := ""
+var _redirect_html := ""
 
 
 func _init(new_port: int, new_bind_address: String) -> void:
@@ -32,7 +32,7 @@ func process() -> void:
 		var connection := _redirect_server.take_connection()
 		var request := connection.get_string(connection.get_available_bytes())
 		if request:
-			var bytes := FileAccess.get_file_as_bytes(_redirect_html_path)
+			var bytes := _redirect_html.to_ascii_buffer()
 			if not bytes.is_empty():
 				connection.put_data("HTTP/1.1 200\r\n".to_ascii_buffer())
 				connection.put_data(bytes)
@@ -78,13 +78,10 @@ static func pcke_codes(length := 43, method := PCKEMethod.S256) -> Dictionary:
 		s += char(ci)
 		i += 1
 	
-	if method == PCKEMethod.S256:
-		return {
-			verifier = s,
-			challenge = Marshalls.utf8_to_base64(s.sha256_text()),
-		}
-	else:
-		return { verifier = s }
+	return {
+		verifier = s,
+		challenge = Marshalls.utf8_to_base64(s.sha256_text()) if method == PCKEMethod.S256 else s,
+	}
 
 
 static func pcked_method_to_string(method: PCKEMethod) -> String:

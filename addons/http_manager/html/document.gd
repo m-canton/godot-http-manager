@@ -131,6 +131,10 @@ func _add_text(new_text: String) -> HTMLDocument:
 	return self
 
 
+func to_bytes() -> PackedByteArray:
+	return text.to_utf8_buffer()
+
+
 ## Loads a [HTMLFile] from .html document.
 ## @experimental
 static func load_from_file(path: String) -> HTMLDocument:
