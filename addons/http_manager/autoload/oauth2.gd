@@ -1,6 +1,10 @@
 class_name HTTPOAuth2 extends Resource
 
 
+## OAuth 2.0 Local Redirect.
+## 
+## It starts TCP server to handle a local OAuth 2.0 redirect URI.
+
 enum PCKEMethod {
 	PLAIN,
 	S256,
@@ -8,7 +12,9 @@ enum PCKEMethod {
 
 var processing := false
 var weak_request: WeakRef
+## Server port.
 var port := 0
+## Server address.
 var bind_address := "*"
 var _redirect_server := TCPServer.new()
 var _redirect_uri := ""
@@ -48,7 +54,6 @@ func start() -> Error:
 	var request: HTTPManagerRequest = weak_request.get_ref()
 	return request.start()
 
-
 ## Generates a random PCKE code verifier.
 ## [b]ASCII:[/b] 45: -, 46: ., 48-57: 0-9, 65-90: A-Z, 95: _, 97-122: a-z, 126: ~
 static func pcke_codes(length := 43, method := PCKEMethod.S256) -> Dictionary:
@@ -80,3 +85,13 @@ static func pcke_codes(length := 43, method := PCKEMethod.S256) -> Dictionary:
 		}
 	else:
 		return { verifier = s }
+
+
+static func pcked_method_to_string(method: PCKEMethod) -> String:
+	if method == PCKEMethod.S256:
+		return "S256"
+	
+	if method == PCKEMethod.PLAIN:
+		return "plain"
+	
+	return ""
