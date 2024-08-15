@@ -192,19 +192,10 @@ func start(listeners = {}) -> Error:
 	
 	return http_manager.request(self)
 
-func oauth2(port: int, bind_adress := "127.0.0.1") -> Error:
-	_oauth2 = HTTPOAuth2.new()
-	
-	var error := _oauth2.start(port, bind_adress)
-	if error:
-		return error
-	
-	error = start()
-	if error:
-		_oauth2.stop()
-		return error
-	
-	return OK
+func oauth2(port: int, bind_address := "127.0.0.1") -> HTTPOAuth2:
+	_oauth2 = HTTPOAuth2.new(port, bind_address)
+	_oauth2.weak_request = weakref(self)
+	return _oauth2
 
 ## Opens the URL with OS shell.
 func shell() -> Error:
