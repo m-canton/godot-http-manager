@@ -37,8 +37,6 @@ var mode := Mode.DEFAULT
 var valid := true
 ## Parsed URI.
 var _parsed_uri := ""
-## OAuth 2.0.
-var _oauth2: HTTPOAuth2
 
 ## TLS Options.
 var tls_options: TLSOptions
@@ -193,9 +191,11 @@ func start(listeners = {}) -> Error:
 	return http_manager.request(self)
 
 func oauth2(port: int, bind_address := "127.0.0.1") -> HTTPOAuth2:
-	_oauth2 = HTTPOAuth2.new(port, bind_address)
-	_oauth2.weak_request = weakref(self)
-	return _oauth2
+	var oa := HTTPOAuth2.new()
+	oa.port = port
+	oa.bind_address = bind_address
+	oa.request = self
+	return oa
 
 ## Opens the URL with OS shell.
 func shell() -> Error:

@@ -1,4 +1,4 @@
-class_name HTTPOAuth2 extends Resource
+class_name HTTPOAuth2 extends Node
 
 
 ## OAuth 2.0 Local Redirect.
@@ -10,49 +10,66 @@ enum PCKEMethod {
 	S256,
 }
 
-var processing := false
-var weak_request: WeakRef
+enum PCKECode {
+	VERIFIER,
+	CHALLENGE,
+}
+
+## Request reference.
+var request: HTTPManagerRequest
 ## Server port.
 var port := 0
 ## Server address.
 var bind_address := "*"
+## Redirect TCP server.
 var _redirect_server := TCPServer.new()
-var _redirect_uri := ""
 ## Loads local HTML file to display in the redirect URI: <bind_address>:<port>
 var _redirect_html := ""
 
 
-func _init(new_port: int, new_bind_address: String) -> void:
-	port = new_port
-	bind_address = new_bind_address
-
-
-func process() -> void:
+func _process(_delta: float) -> void:
 	if _redirect_server.is_connection_available():
 		var connection := _redirect_server.take_connection()
-		var request := connection.get_string(connection.get_available_bytes())
-		if request:
-			var bytes := _redirect_html.to_ascii_buffer()
-			if not bytes.is_empty():
+		var crequest := connection.get_string(connection.get_available_bytes())
+		if not crequest.is_empty():
+			if not _redirect_html.is_empty():
 				connection.put_data("HTTP/1.1 200\r\n".to_ascii_buffer())
-				connection.put_data(bytes)
-			processing = false
+				connection.put_data(_redirect_html.to_ascii_buffer())
+			
+			var response := HTTPManagerResponse.new()
+			response.headers.append(MIME.type_to_content_type(MIME.Type.TEXT))
+			response.body = MIME.var_to_buffer(crequest, MIME.Type.TEXT)
+			
+			request.complete(response)
+			queue_free()
 
 
-func stop() -> void:
-	_redirect_server.stop()
-	processing = false
+func set_redirect_html(redirect_html: String) -> HTTPOAuth2:
+	_redirect_html = redirect_html
+	return self
 
 
-func start() -> Error:
+func start(on_complete = null) -> Error:
+	HTTPManagerRequest.http_manager.add_child(self)
+	
+	if on_complete is Callable:
+		request.set_meta("listeners", { HTTPManagerRequest.Listener.COMPLETE: on_complete })
+	
 	var error := _redirect_server.listen(port, bind_address)
 	if error:
+		queue_free()
 		return error
 	
-	processing = true
+	if not HTTPManagerRequest.http_manager:
+		push_error("HTTPManager is not started.")
 	
-	var request: HTTPManagerRequest = weak_request.get_ref()
-	return request.start()
+	error = request.shell()
+	if error:
+		queue_free()
+		return error
+	
+	return OK
+
 
 ## Generates a random PCKE code verifier.
 ## [b]ASCII:[/b] 45: -, 46: ., 48-57: 0-9, 65-90: A-Z, 95: _, 97-122: a-z, 126: ~
@@ -79,12 +96,12 @@ static func pcke_codes(length := 43, method := PCKEMethod.S256) -> Dictionary:
 		i += 1
 	
 	return {
-		verifier = s,
-		challenge = Marshalls.utf8_to_base64(s.sha256_text()) if method == PCKEMethod.S256 else s,
+		PCKECode.VERIFIER: s,
+		PCKECode.CHALLENGE: Marshalls.utf8_to_base64(s.sha256_text()) if method == PCKEMethod.S256 else s,
 	}
 
 
-static func pcked_method_to_string(method: PCKEMethod) -> String:
+static func pcke_method_to_string(method: PCKEMethod) -> String:
 	if method == PCKEMethod.S256:
 		return "S256"
 	

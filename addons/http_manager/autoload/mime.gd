@@ -12,6 +12,7 @@ enum Type {
 	JSON,
 	PNG,
 	URL_ENCODED,
+	TEXT,
 	WEBP,
 	WEBM_AUDIO,
 	WEBM_VIDEO,
@@ -33,6 +34,7 @@ const TypeDict := {
 	},
 	"text": {
 		"html": Type.HTML,
+		"plain": Type.TEXT,
 	},
 	"video": {
 		"webm": Type.WEBM_VIDEO,
@@ -89,7 +91,7 @@ static func type_to_content_type(mime: MIME.Type, attributes := {}) -> String:
 static func buffer_to_var(buffer: PackedByteArray, type := Type.NONE, attributes := {}) -> Variant:
 	if type == Type.JSON:
 		return JSON.parse_string(buffer.get_string_from_utf8())
-	elif type == Type.HTML:
+	elif type in [Type.HTML, Type.TEXT]:
 		return buffer.get_string_from_utf8()
 	elif type == Type.JPG:
 		var image := Image.new()
@@ -107,6 +109,8 @@ static func buffer_to_var(buffer: PackedByteArray, type := Type.NONE, attributes
 static func var_to_buffer(value, type := Type.NONE, attributes := {}) -> PackedByteArray:
 	if type == Type.JSON:
 		return var_to_string(value).to_utf8_buffer()
+	elif type in [Type.URL_ENCODED, Type.HTML, Type.TEXT]:
+		return value.to_utf8_buffer() if value is String else []
 	elif type == Type.JPG:
 		if value is Texture2D:
 			value = value.get_image()
@@ -130,13 +134,9 @@ static func var_to_buffer(value, type := Type.NONE, attributes := {}) -> PackedB
 static func var_to_string(value, type := Type.NONE, attributes := {}) -> String:
 	if type == Type.JSON:
 		return value if value is String else JSON.stringify(value, "", false)
-	elif type == Type.URL_ENCODED:
+	elif type in [Type.HTML, Type.TEXT, Type.URL_ENCODED]:
 		return value if value is String else ""
-	elif type == Type.JPG:
-		return Marshalls.raw_to_base64(value if value is PackedByteArray else var_to_buffer(value, type, attributes))
-	elif type == Type.PNG:
-		return Marshalls.raw_to_base64(value if value is PackedByteArray else var_to_buffer(value, type, attributes))
-	elif type == Type.WEBP:
+	elif type in [Type.JPG, Type.PNG, Type.WEBP]:
 		return Marshalls.raw_to_base64(value if value is PackedByteArray else var_to_buffer(value, type, attributes))
 	elif value is String:
 		return value
