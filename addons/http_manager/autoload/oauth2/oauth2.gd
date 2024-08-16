@@ -15,7 +15,8 @@ var port := 0
 var bind_address := "*"
 ## Redirect TCP server.
 var _redirect_server := TCPServer.new()
-## Loads local HTML file to display in the redirect URI: <bind_address>:<port>
+## Loads local HTML file to display in the redirect URI: <bind_address>:<port>.
+## See [method set_redirect_html].
 var _redirect_html := ""
 ## Timeout
 var _duration := 120.0
