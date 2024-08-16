@@ -4,6 +4,8 @@ class_name OAuth2 extends Node
 ## OAuth 2.0 Local Redirect.
 ## 
 ## It starts TCP server to handle a local OAuth 2.0 redirect URI.
+## 
+## @tutorial(OAuth 2.0): https://datatracker.ietf.org/doc/html/rfc6749
 
 ## Request reference.
 var request: HTTPManagerRequest
