@@ -65,7 +65,7 @@ func get_parsed_uri() -> String:
 func get_url() -> String:
 	return (route.client.base_url + _parsed_uri) if route and route.client else ""
 
-#region Authentication
+#region Authorization
 ## Adds Basic Authentication header.
 func set_basic_auth(username: String, password := "") -> HTTPManagerRequest:
 	_set_auth("Basic " + Marshalls.utf8_to_base64(username + ":" + password))
@@ -88,14 +88,14 @@ func _set_auth(type_credentials_string: String) -> void:
 	use_auth = true
 #endregion
 
-#region Setting Properties
+#region Chain Methods
 func add_header(new_header: String) -> HTTPManagerRequest:
 	headers.append(new_header)
 	return self
 
 ## [method HTTPManager.create_request_from_route] calls this method to parse and
 ## add the url params.
-func set_url_params(dict: Dictionary) -> Error:
+func set_url_params(new_params: Dictionary) -> Error:
 	var parts := route.uri_pattern.split("/")
 	var parsed_parts := PackedStringArray()
 	var used_params := PackedStringArray()
@@ -109,26 +109,26 @@ func set_url_params(dict: Dictionary) -> Error:
 			if part.ends_with("?}"):
 				part = part.substr(1, part.length() - 3)
 				
-				if not dict.has(part):
+				if not new_params.has(part):
 					continue
 			elif part.ends_with("}"):
 				part = part.substr(1, part.length() - 2)
 				
-				if not dict.has(part):
+				if not new_params.has(part):
 					push_error("Route requires '%s' param: %s" % [part, route.resource_path])
 					return FAILED
 			else:
 				push_error("'{' does not close in 'uri_pattern': ", route.resource_path)
 				return FAILED
 			
-			var dict_value = dict.get(part)
+			var param_value = new_params.get(part)
 			used_params.append(part)
-			dict.erase(part)
+			new_params.erase(part)
 			
-			if dict_value is int:
+			if param_value is int:
 				parsed_part = str(parsed_part)
-			elif dict_value is StringName or dict_value is String:
-				parsed_part = String(dict_value)
+			elif param_value is StringName or param_value is String:
+				parsed_part = String(param_value)
 			else:
 				push_error("'%s' url param must be integer or string: %s" % [part, route.resource_path])
 				return FAILED
@@ -136,7 +136,7 @@ func set_url_params(dict: Dictionary) -> Error:
 			parsed_part = part
 		parsed_parts.append(parsed_part)
 	
-	_parsed_uri = "/".join(parsed_parts) + route.client.parse_query(dict)
+	_parsed_uri = "?".join(["/".join(parsed_parts), route.client.parse_query(new_params)])
 	
 	return OK
 
@@ -148,21 +148,20 @@ func set_body(new_body, content_type := MIME.Type.NONE, attributes := {}) -> HTT
 				headers.remove_at(i)
 				break
 		
-		body = MIME.var_to_string(new_body, content_type)
+		if content_type == MIME.Type.URL_ENCODED:
+			if route and route.client:
+				body = route.client.parse_query(new_body)
+			else:
+				push_warning
+				body = ""
+		else:
+			body = MIME.var_to_string(new_body, content_type)
 		headers.append("Content-Type: " + MIME.type_to_string(content_type))
 	elif new_body is String:
 		body = new_body
+	else:
+		body = ""
 	
-	return self
-
-func set_json_body(new_body) -> HTTPManagerRequest:
-	return set_body(new_body, MIME.Type.JSON)
-
-func set_urlencoded_body(new_body: Dictionary) -> HTTPManagerRequest:
-	if route and route.client:
-		return set_body(route.client.parse_query(new_body).substr(1), MIME.Type.URL_ENCODED)
-	
-	push_warning("No client.")
 	return self
 #endregion
 
@@ -190,14 +189,15 @@ func start(listeners = {}) -> Error:
 	
 	return http_manager.request(self)
 
-func oauth2(port: int, bind_address := "127.0.0.1") -> HTTPOAuth2:
-	var oa := HTTPOAuth2.new()
+## Creates a [OAuth2] with this request.
+func oauth2(port: int, bind_address := "127.0.0.1") -> OAuth2:
+	var oa := OAuth2.new()
 	oa.port = port
 	oa.bind_address = bind_address
 	oa.request = self
 	return oa
 
-## Opens the URL with OS shell.
+## Requests the OS to open URL. See [method OS.shell_open].
 func shell() -> Error:
 	var s := get_url()
 	if s.is_empty():
