@@ -8,12 +8,13 @@ class_name HTTPManagerController extends RefCounted
 ## @experimental
 
 
-var _client: HTTPManagerClient
+func create_client(base_url: String) -> HTTPManagerClient:
+	var c := HTTPManagerClient.new()
+	c.base_url = base_url
+	return c
 
 
-func set_client(client: HTTPManagerClient) -> void:
-	_client = client
-
-
-func set_route() -> void:
-	pass
+func create_route(uri: String) -> HTTPManagerRoute:
+	var r := HTTPManagerRoute.new()
+	r.uri_pattern = uri
+	return r

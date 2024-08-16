@@ -96,6 +96,13 @@ func cancel_all(c: HTTPManagerClient) -> void:
 			c.clear()
 #endregion
 
+func download(d: HTTPManagerDownload) -> Error:
+	if not d:
+		push_error("Download is null.")
+		return FAILED
+	
+	return OK
+
 ## Do not call this method. Use [method HTTPManagerRoute.create_request]
 ## instead.
 ## @experimental
@@ -200,7 +207,7 @@ func _on_success(http_client: HTTPClient) -> void:
 	response.headers = http_client.get_response_headers()
 	response.successful = true
 	
-	if response.code in [HTTPClient.RESPONSE_MOVED_PERMANENTLY, HTTPClient.RESPONSE_FOUND, HTTPClient.RESPONSE_SEE_OTHER]:
+	if response.code in [HTTPClient.RESPONSE_MOVED_PERMANENTLY, HTTPClient.RESPONSE_FOUND]:
 		if redirects >= r.route.client.max_redirects:
 			push_warning("Max redirects reached.")
 			response.successful = false

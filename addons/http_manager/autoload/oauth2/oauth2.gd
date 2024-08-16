@@ -1,19 +1,9 @@
-class_name HTTPOAuth2 extends Node
+class_name OAuth2 extends Node
 
 
 ## OAuth 2.0 Local Redirect.
 ## 
 ## It starts TCP server to handle a local OAuth 2.0 redirect URI.
-
-enum PCKEMethod {
-	PLAIN,
-	S256,
-}
-
-enum PCKECode {
-	VERIFIER,
-	CHALLENGE,
-}
 
 ## Request reference.
 var request: HTTPManagerRequest
@@ -55,11 +45,31 @@ func _process(delta: float) -> void:
 			queue_free()
 
 
-func set_redirect_html(redirect_html: String) -> HTTPOAuth2:
+func set_redirect_html(redirect_html: String) -> OAuth2:
 	_redirect_html = redirect_html
 	return self
 
-## Starts the OAuth 2.0. Frees other HTTPOAuth2.
+func set_default_redirect_html() -> OAuth2:
+	_redirect_html = HTMLDocument.new().add_doctype().start_html({
+		lang = "en",
+	}) \
+		.start_head() \
+			.add_meta({ charset = "UTF-8" }) \
+		.close_tag() \
+		.start_body() \
+			.start_p() \
+				.add_text("Hello world!") \
+			.close_tag() \
+		.close_tag() \
+	.close_tag().text
+	
+	return self
+
+func set_pkce(code_key: String, code_length := 43, method := OAuth2PKCE.Method.S256) -> OAuth2:
+	push_error("Not implemented.")
+	return self
+
+## Starts the OAuth 2.0. Frees other [OAuth2].
 func start(on_complete = null) -> Error:
 	if not HTTPManagerRequest.http_manager:
 		push_error("HTTPManager is not started.")
@@ -68,7 +78,7 @@ func start(on_complete = null) -> Error:
 	
 	# One OAuth 2.0
 	for c in HTTPManagerRequest.http_manager.get_children():
-		if c is HTTPOAuth2:
+		if c is OAuth2:
 			c.queue_free()
 	
 	HTTPManagerRequest.http_manager.add_child(self)
@@ -88,43 +98,3 @@ func start(on_complete = null) -> Error:
 		return error
 	
 	return OK
-
-
-## Generates a random PCKE code verifier.
-## [b]ASCII:[/b] 45: -, 46: ., 48-57: 0-9, 65-90: A-Z, 95: _, 97-122: a-z, 126: ~
-static func pcke_codes(length := 43, method := PCKEMethod.S256) -> Dictionary:
-	var s := ""
-	length = clamp(length, 43, 128)
-	
-	var i := 0
-	while i < length:
-		var ci := randi_range(0, 65)
-		if ci < 2:
-			ci += 45
-		elif ci < 12:
-			ci += 46
-		elif ci < 38:
-			ci += 53
-		elif ci == 38:
-			ci = 95
-		elif ci < 65:
-			ci += 58
-		else:
-			ci = 126
-		s += char(ci)
-		i += 1
-	
-	return {
-		PCKECode.VERIFIER: s,
-		PCKECode.CHALLENGE: Marshalls.utf8_to_base64(s.sha256_text()) if method == PCKEMethod.S256 else s,
-	}
-
-
-static func pcke_method_to_string(method: PCKEMethod) -> String:
-	if method == PCKEMethod.S256:
-		return "S256"
-	
-	if method == PCKEMethod.PLAIN:
-		return "plain"
-	
-	return ""

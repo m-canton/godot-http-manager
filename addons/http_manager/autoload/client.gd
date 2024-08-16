@@ -26,7 +26,7 @@ enum ArrayParamFormat {
 @export_range(0, 10, 1, "or_greater") var max_redirects := 3
 ## Maximum concurrent requests.
 @export_range(0, 10, 1, "or_greater") var max_concurrent_requests := 1
-## Maximum concurrent requests.
+## Maximum concurrent downloads.
 @export_range(0, 10, 1, "or_greater") var max_concurrent_downloads := 1
 ## Priority in HTTPManager to make requests.[br]
 ## [b]Note: [/b] It does nothing yet.
@@ -166,4 +166,4 @@ func parse_query(query: Dictionary) -> String:
 			_:
 				s += str(key, "=", str(value).uri_encode())
 	
-	return s if s.is_empty() else "?" + s.substr(1)
+	return s.substr(1)

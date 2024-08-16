@@ -34,9 +34,9 @@ enum Method {
 @export var priority := 0
 
 
-## Creates a request to this route. Method name can change.
-## @experimental
-func create_request(url_params := {}, body = null, content_type := MIME.Type.NONE) -> HTTPManagerRequest:
+## Creates a request to this route. Parses URI pattern with url params.
+## Also it can set request body. See [method HTTPManagerRequest.set_body].
+func create_request(url_params := {}, body = null, content_type := MIME.Type.NONE, attributes := {}) -> HTTPManagerRequest:
 	var r := HTTPManagerRequest.new()
 	
 	r.route = self
@@ -54,7 +54,7 @@ func create_request(url_params := {}, body = null, content_type := MIME.Type.NON
 			r.headers.append(h)
 	
 	if r.set_url_params(url_params) == OK:
-		r.set_body(body, content_type)
+		r.set_body(body, content_type, attributes)
 	else:
 		r.valid = false
 	
