@@ -44,7 +44,6 @@ func _process(delta: float) -> void:
 			request.complete(response)
 			queue_free()
 
-
 func set_redirect_html(redirect_html: String) -> OAuth2:
 	_redirect_html = redirect_html
 	return self

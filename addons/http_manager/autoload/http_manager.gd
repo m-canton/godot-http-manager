@@ -96,6 +96,7 @@ func cancel_all(c: HTTPManagerClient) -> void:
 			c.clear()
 #endregion
 
+#region Start Requests
 func download(d: HTTPManagerDownload) -> Error:
 	if not d:
 		push_error("Download is null.")
@@ -144,6 +145,17 @@ func fetch(r: HTTPManagerRequest) -> Variant:
 		else:
 			return null
 	return null
+#endregion
+
+## Adds TLS Options to a client. For now it does nothing.
+## @experimental
+func set_tls_options(client: HTTPManagerClient, tls_options: TLSOptions) -> Error:
+	if not client:
+		push_error("Client is null.")
+		return FAILED
+	
+	client.tls_options = tls_options
+	return OK
 
 ## Do not call this method. This method is used by HTTPManager classes to make
 ## next request if constraints are released.
@@ -175,16 +187,6 @@ func _next(c: HTTPManagerClient) -> Error:
 	
 	set_process(true)
 	
-	return OK
-
-## Adds TLS Options to a client. For now it is not used.
-## @experimental
-func set_tls_options(client: HTTPManagerClient, tls_options: TLSOptions) -> Error:
-	if not client:
-		push_error("Client is null.")
-		return FAILED
-	
-	client.tls_options = tls_options
 	return OK
 
 ## Called on request failure.

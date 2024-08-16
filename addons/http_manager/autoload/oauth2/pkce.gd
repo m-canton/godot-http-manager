@@ -81,7 +81,7 @@ func get_code_challenge() -> String:
 	if _code_verifier.is_empty():
 		random()
 	if method == Method.S256:
-		return Marshalls.utf8_to_base64(_code_verifier.sha256_text().uri_encode())
+		return Marshalls.utf8_to_base64(_code_verifier.sha256_text())
 	return _code_verifier
 
 ## Returns a dictionary with random [code]"code_verifier"[/code] and
