@@ -35,6 +35,9 @@ enum Method {
 	S256, ## S256.
 }
 
+## URI unreserved characters.
+const UNRESERVED_CHARACTERS := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"
+
 ## Transformation method.
 var method := Method.S256
 ## Code verifier length. Value between 43 and 128.
@@ -54,20 +57,7 @@ func random(new_length := 0, new_method := Method.NONE) -> void:
 	
 	var i := 0
 	while i < length:
-		var ci := randi_range(0, 65)
-		if ci < 2:
-			ci += 45
-		elif ci < 12:
-			ci += 46
-		elif ci < 38:
-			ci += 53
-		elif ci == 38:
-			ci = 95
-		elif ci < 65:
-			ci += 58
-		else:
-			ci = 126
-		_code_verifier += char(ci)
+		_code_verifier += UNRESERVED_CHARACTERS[randi_range(0, 65)]
 		i += 1
 
 ## Returns code verifier. Use [method random] to change code verifier.
