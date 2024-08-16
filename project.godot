@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="HTTP Manager"
-config/tags=PackedStringArray("network", "plugin", "unfinished")
+config/tags=PackedStringArray("network", "plugin")
 run/main_scene="res://addons/http_manager/test/test.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 config/icon="res://icon.webp"
