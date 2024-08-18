@@ -56,12 +56,13 @@ func complete(response: HTTPManagerResponse) -> void:
 			if not response.successful:
 				listeners[key].call(response)
 
-## Get endpoint uri with url params.
+## Returns request URI or path with url params.
 func get_parsed_uri() -> String:
 	if route:
 		return _parsed_uri
 	return ""
 
+## Returns request URL.
 func get_url() -> String:
 	return (route.client.base_url + _parsed_uri) if route and route.client else ""
 
@@ -89,9 +90,11 @@ func _set_auth(type_credentials_string: String) -> void:
 #endregion
 
 #region Chain Methods
+## Adds a new header.
 func add_header(new_header: String) -> HTTPManagerRequest:
 	headers.append(new_header)
 	return self
+
 ## Formats and sets a body. See [method MIME.var_to_string].
 func set_body(new_body, content_type := MIME.Type.NONE, attributes := {}) -> HTTPManagerRequest:
 	if content_type != MIME.Type.NONE:

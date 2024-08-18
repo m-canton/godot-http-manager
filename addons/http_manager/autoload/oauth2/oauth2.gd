@@ -16,6 +16,9 @@ const SETTING_NAME_PORT := "addons/http_manager/auth/port"
 ## Default local server port.
 const DEFAULT_PORT := 8120
 
+## URI unreserved characters.
+const UNRESERVED_CHARACTERS := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"
+
 ## Request reference.
 var request: HTTPManagerRequest
 ## Server port.
@@ -116,6 +119,15 @@ func start(on_complete: Callable) -> Error:
 	HTTPManagerRequest.http_manager.add_child(self)
 	
 	return OK
+
+
+static func generate_state(length := 50) -> String:
+	var s := ""
+	var i := 0
+	while i < length:
+		s += UNRESERVED_CHARACTERS[randi_range(0, 65)]
+		i += 1
+	return s
 
 
 static func get_default_bind_address() -> String:

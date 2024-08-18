@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="HTTPManagerRoute" load_steps=3 format=3 uid="uid://dwdkts6on3jib"]
 
-[ext_resource type="Script" path="res://addons/http_manager/autoload/route.gd" id="1_g3t2t"]
+[ext_resource type="Script" path="res://addons/http_manager/autoload/client/route.gd" id="1_g3t2t"]
 [ext_resource type="Resource" uid="uid://cexni4twjdr5a" path="res://addons/http_manager/test/restful_api/restful_api.tres" id="1_nmwbh"]
 
 [resource]

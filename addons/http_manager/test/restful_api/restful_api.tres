@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://addons/http_manager/autoload/contraints/set.gd" id="1_ltvgo"]
 [ext_resource type="Script" path="res://addons/http_manager/autoload/contraints/constraint.gd" id="2_mdolp"]
-[ext_resource type="Script" path="res://addons/http_manager/autoload/client.gd" id="2_qtk8e"]
+[ext_resource type="Script" path="res://addons/http_manager/autoload/client/client.gd" id="2_qtk8e"]
 [ext_resource type="Script" path="res://addons/http_manager/autoload/contraints/request.gd" id="3_8jpso"]
 
 [sub_resource type="Resource" id="Resource_q8bal"]

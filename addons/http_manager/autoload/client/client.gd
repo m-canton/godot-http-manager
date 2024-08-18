@@ -15,6 +15,11 @@ enum ArrayParamFormat {
 	SPACE_SEPARATED, ## [code]foo=bar aux[/code]
 }
 
+enum ClientData {
+	TOKEN,
+	CACHE,
+}
+
 ## See [method parse_url].
 enum ParsedUrl {
 	SCHEME, ## Scheme.

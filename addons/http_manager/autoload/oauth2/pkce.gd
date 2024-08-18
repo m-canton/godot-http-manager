@@ -30,16 +30,10 @@ class_name OAuth2PKCE extends RefCounted
 
 ## Methods.
 enum Method {
-	NONE, ## No method.
 	PLAIN, ## Plain.
 	S256, ## S256.
 }
 
-## URI unreserved characters.
-const UNRESERVED_CHARACTERS := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"
-
-## Transformation method.
-var method := Method.S256
 ## Code verifier length. Value between 43 and 128.
 var length := 43
 ## Code verifier. See [method random].
@@ -49,16 +43,9 @@ var _code_verifier := ""
 ## [member method]. See [method get_code_verifier] and 
 ## [method get_code_challenge] to get the strings.[br]
 ## [b]Valid characters:[/b] 45: -, 46: ., 48-57: 0-9, 65-90: A-Z, 95: _, 97-122: a-z, 126: ~
-func random(new_length := 0, new_method := Method.NONE) -> void:
+func random(new_length := 0) -> void:
 	length = clamp(length if new_length == 0 else new_length, 43, 128)
-	if new_method != Method.NONE: method = new_method
-	
-	_code_verifier = ""
-	
-	var i := 0
-	while i < length:
-		_code_verifier += UNRESERVED_CHARACTERS[randi_range(0, 65)]
-		i += 1
+	_code_verifier = OAuth2.generate_state(length)
 
 ## Returns code verifier. Use [method random] to change code verifier.
 func get_code_verifier() -> String:
@@ -67,7 +54,7 @@ func get_code_verifier() -> String:
 	return _code_verifier
 
 ## Returns code challenge.
-func get_code_challenge() -> String:
+func get_code_challenge(method := Method.S256) -> String:
 	if _code_verifier.is_empty():
 		random()
 	if method == Method.S256:
@@ -76,11 +63,11 @@ func get_code_challenge() -> String:
 
 ## Returns a dictionary with random [code]"code_verifier"[/code] and
 ## [code]"code_challenge"[/code].
-static func generate_codes(length := 43, method := Method.S256) -> Dictionary:
+static func generate_pkce(length := 43, method := Method.S256) -> Dictionary:
 	var pkce := OAuth2PKCE.new()
 	return {
 		code_verifier = pkce.get_code_verifier(),
-		code_challenge = pkce.get_code_challenge(),
+		code_challenge = pkce.get_code_challenge(method),
 	}
 
 ## Converts [enum Method] to [String]. Use in requests.
