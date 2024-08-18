@@ -34,10 +34,14 @@ enum Method {
 	S256, ## S256.
 }
 
+## Method
+var method := Method.S256
 ## Code verifier length. Value between 43 and 128.
 var length := 43
-## Code verifier. See [method random].
-var _code_verifier := ""
+## Code verifier.
+var code_verifier := ""
+## Code challenge.
+var code_challenge := ""
 
 ## Sets a random code verifier. You can change [member length] and
 ## [member method]. See [method get_code_verifier] and 
@@ -45,33 +49,10 @@ var _code_verifier := ""
 ## [b]Valid characters:[/b] 45: -, 46: ., 48-57: 0-9, 65-90: A-Z, 95: _, 97-122: a-z, 126: ~
 func random(new_length := 0) -> void:
 	length = clamp(length if new_length == 0 else new_length, 43, 128)
-	_code_verifier = OAuth2.generate_state(length)
+	code_verifier = OAuth2.generate_state(length)
+	code_challenge = Marshalls.utf8_to_base64(code_verifier.sha256_text()) if method == Method.S256 else code_verifier
 
-## Returns code verifier. Use [method random] to change code verifier.
-func get_code_verifier() -> String:
-	if _code_verifier.is_empty():
-		random()
-	return _code_verifier
-
-## Returns code challenge.
-func get_code_challenge(method := Method.S256) -> String:
-	if _code_verifier.is_empty():
-		random()
-	if method == Method.S256:
-		return Marshalls.utf8_to_base64(_code_verifier.sha256_text())
-	return _code_verifier
-
-## Returns a dictionary with random [code]"code_verifier"[/code] and
-## [code]"code_challenge"[/code].
-static func generate_pkce(length := 43, method := Method.S256) -> Dictionary:
-	var pkce := OAuth2PKCE.new()
-	return {
-		code_verifier = pkce.get_code_verifier(),
-		code_challenge = pkce.get_code_challenge(method),
-	}
-
-## Converts [enum Method] to [String]. Use in requests.
-static func method_to_string(method: Method) -> String:
+func get_method_string() -> String:
 	if method == Method.S256:
 		return "S256"
 	

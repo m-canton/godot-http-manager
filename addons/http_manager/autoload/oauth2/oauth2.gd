@@ -129,6 +129,12 @@ static func generate_state(length := 50) -> String:
 		i += 1
 	return s
 
+## Returns a dictionary with random [code]"code_verifier"[/code] and
+## [code]"code_challenge"[/code].
+static func generate_pkce(length := 43, method := OAuth2PKCE.Method.S256) -> OAuth2PKCE:
+	var pkce := OAuth2PKCE.new()
+	pkce.random()
+	return pkce
 
 static func get_default_bind_address() -> String:
 	return ProjectSettings.get_setting(SETTING_NAME_BIND_ADDRESS, DEFAULT_BIND_ADDRESS)
