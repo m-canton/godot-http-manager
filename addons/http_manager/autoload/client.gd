@@ -15,6 +15,21 @@ enum ArrayParamFormat {
 	SPACE_SEPARATED, ## [code]foo=bar aux[/code]
 }
 
+## See [method parse_url].
+enum ParsedUrl {
+	SCHEME, ## Scheme.
+	DOMAIN, ## Domain.
+	PORT, ## Port.
+	PATH, ## Path.
+}
+
+## Setting name for client data dir to save data.
+const SETTING_NAME_DIR := "addons/http_manager/clients/data_dir"
+## Default setting value for clients dir.
+const DEFAULT_DIR := "user://addons/http_manager"
+
+static var _url_regex: RegEx
+
 ## Base URL. This string cannot end with [code]"/"[/code].[br]
 ## [b]Example:[/b] [code]"http://localhost:8080/api"[/code].
 @export var base_url := ""
@@ -47,9 +62,6 @@ enum ArrayParamFormat {
 ## Array format for url param values. See [enum ArrayParamFormat].
 @export var url_param_array_format := ArrayParamFormat.MULTIPLE
 
-## See [HTTPManager.next].
-var http_client_count := 0
-
 ## Request queue.
 var _queue: Array[HTTPManagerRequest] = []
 ## Queue order.
@@ -58,20 +70,19 @@ var _queue_asc := false:
 		if _queue_asc != value:
 			_queue_asc = value
 			_queue.reverse()
-var tls_options: TLSOptions
 
-
+## Processes constraints.
 func process(delta: float) -> bool:
 	for c in _current_constraints():
 		if c.processing:
 			return c.process(delta) and not _queue.is_empty()
 	return false
 
-
+## Clears the queue.
 func clear() -> void:
 	_queue.clear()
 
-
+## Appends a request to the queue.
 func queue(r: HTTPManagerRequest) -> void:
 	if _queue_asc:
 		_queue_asc = false
@@ -90,41 +101,40 @@ func queue(r: HTTPManagerRequest) -> void:
 	if i == qsize:
 		_queue.append(r)
 
-
+## Returns the next requestand removes it from the queue.
 func next() -> HTTPManagerRequest:
 	if not _queue_asc:
 		_queue_asc = true
 	return _queue.pop_back()
 
-
+## Returns [code]true[/code] if the next request can start depending on the
+## constraints.
 func can_next() -> bool:
-	if not _queue_asc:
-		_queue_asc = true
-	
 	if _queue.is_empty():
 		return false
 	
 	for c in _current_constraints():
 		if not c.check(_queue[-1].route):
 			return false
+	
 	return true
 
-
+## Returns [code]true[/code] if the request queue is empty.
 func is_empty() -> bool:
 	return _queue.is_empty()
 
-
+## Applies restrictions based on the route processed.
 func apply_constraints(r: HTTPManagerRoute) -> void:
 	for c in _current_constraints():
 		c.handle(r)
 
-
+## Returns the current constraints. See [member constraint_current_set].
 func _current_constraints() -> Array[HTTPManagerConstraint]:
 	if constraint_current_set < 0 or constraint_current_set >= constraint_sets.size():
 		return []
 	return constraint_sets[constraint_current_set].constraints
 
-
+## Returns a parsed query [Dictionary] as [String].
 func parse_query(query: Dictionary) -> String:
 	var s := ""
 	for key in query:
@@ -167,3 +177,34 @@ func parse_query(query: Dictionary) -> String:
 				s += str(key, "=", str(value).uri_encode())
 	
 	return s.substr(1)
+
+## Returns clients dir from project settings.
+static func get_clients_dir() -> String:
+	return ProjectSettings.get_setting(SETTING_NAME_DIR, DEFAULT_DIR)
+
+## Returns URL parts. See [enum ParsedUrl]
+static func parse_url(url: String) -> Dictionary:
+	if not _url_regex is RegEx:
+		_url_regex = RegEx.create_from_string("(?<scheme>https?):\\/\\/(?<domain>[a-zA-Z0-9\\.\\-]+)(:(?<port>[0-9]+))?(?<path>.*)?")
+	
+	var result := _url_regex.search(url)
+	if not result:
+		push_error("Invalid URL: ", url)
+		return {}
+	
+	var port_string := result.get_string("port")
+	return {
+		ParsedUrl.SCHEME: result.get_string("scheme"),
+		ParsedUrl.DOMAIN: result.get_string("domain"),
+		ParsedUrl.PORT: -1 if port_string == "" else port_string.to_int(),
+		ParsedUrl.PATH: result.get_string("path"),
+	}
+
+## Parsed URL to string. See [method parse_url].
+static func parsed_url_to_string(dict: Dictionary) -> String:
+	var s := dict.get(ParsedUrl.DOMAIN, "")
+	var scheme: String = dict.get(ParsedUrl.SCHEME, "")
+	if scheme != "": s = scheme + "://" + s
+	var port: int = dict.get(ParsedUrl.PORT, -1)
+	if port != -1: s += ":" + str(port)
+	return s + dict.get(ParsedUrl.PATH, "")

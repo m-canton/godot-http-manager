@@ -3,24 +3,33 @@ class_name OAuth2 extends Node
 
 ## OAuth 2.0 Local Redirect.
 ## 
-## It starts TCP server to handle a local OAuth 2.0 redirect URI.
+## It starts local TCP server to handle a OAuth 2.0 redirect URI.
 ## 
 ## @tutorial(OAuth 2.0): https://datatracker.ietf.org/doc/html/rfc6749
+
+## Setting name for default local server bind address.
+const SETTING_NAME_BIND_ADDRESS := "addons/http_manager/auth/bind_address"
+## Default local bind address.
+const DEFAULT_BIND_ADDRESS := "127.0.0.1"
+## Setting name for default local server port.
+const SETTING_NAME_PORT := "addons/http_manager/auth/port"
+## Default local server port.
+const DEFAULT_PORT := 8120
 
 ## Request reference.
 var request: HTTPManagerRequest
 ## Server port.
-var port := 0
+var _port := 0
 ## Server address.
-var bind_address := "*"
+var _bind_address := ""
 ## Redirect TCP server.
 var _redirect_server := TCPServer.new()
 ## Loads local HTML file to display in the redirect URI: <bind_address>:<port>.
 ## See [method set_redirect_html].
 var _redirect_html := ""
-## Timeout
+## Server duration.
 var _duration := 120.0
-## Current time
+## Current time. See [member duration].
 var _time := 0.0
 
 
@@ -47,10 +56,13 @@ func _process(delta: float) -> void:
 			request.complete(response)
 			queue_free()
 
+## Sets a HTML code to show in the redirect URI.
 func set_redirect_html(redirect_html: String) -> OAuth2:
 	_redirect_html = redirect_html
 	return self
 
+## Sets default redirect HTML code. See [methodd set_redirect_html] to set
+## a custom code.
 func set_default_redirect_html() -> OAuth2:
 	_redirect_html = HTMLDocument.new().add_doctype().start_html({
 		lang = "en",
@@ -67,12 +79,19 @@ func set_default_redirect_html() -> OAuth2:
 	
 	return self
 
+## Sets PKCE handler.
+## @experimental
 func set_pkce(code_key: String, code_length := 43, method := OAuth2PKCE.Method.S256) -> OAuth2:
 	push_error("Not implemented.")
 	return self
 
+## Sets local server port and bind address. See [method TCPServer.listen]
+func set_server(port := 0, bind_address := "") -> void:
+	_bind_address = OAuth2.get_default_bind_address() if bind_address == "" else bind_address
+	_port = OAuth2.get_default_port() if port == 0 else port
+
 ## Starts the OAuth 2.0. Frees other [OAuth2].
-func start(on_complete = null) -> Error:
+func start(on_complete: Callable) -> Error:
 	if not HTTPManagerRequest.http_manager:
 		push_error("HTTPManager is not started.")
 		queue_free()
@@ -83,20 +102,25 @@ func start(on_complete = null) -> Error:
 		if c is OAuth2:
 			c.queue_free()
 	
-	HTTPManagerRequest.http_manager.add_child(self)
+	request.set_meta("listeners", { HTTPManagerRequest.Listener.COMPLETE: on_complete })
 	
-	if on_complete is Callable:
-		request.set_meta("listeners", { HTTPManagerRequest.Listener.COMPLETE: on_complete })
-	
-	var error := _redirect_server.listen(port, bind_address)
+	var error := _redirect_server.listen(_port, _bind_address)
 	if error:
 		push_error("It cannot listen the port.")
-		queue_free()
 		return error
 	
 	error = request.shell()
 	if error:
-		queue_free()
 		return error
 	
+	HTTPManagerRequest.http_manager.add_child(self)
+	
 	return OK
+
+
+static func get_default_bind_address() -> String:
+	return ProjectSettings.get_setting(SETTING_NAME_BIND_ADDRESS, DEFAULT_BIND_ADDRESS)
+
+
+static func get_default_port() -> int:
+	return ProjectSettings.get_setting(SETTING_NAME_PORT, DEFAULT_PORT)

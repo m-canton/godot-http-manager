@@ -1,7 +1,10 @@
 class_name HTTPManagerDownload extends RefCounted
 
-
-const CACHE_FILE_PATH := "user://addons/http_manager/cache.ini"
+## HTTP Manager Download
+## 
+## This [RefCounted] is used to create a download with its URL.
+## 
+## @experimental
 
 
 ## Request URL.
@@ -14,6 +17,8 @@ var cache := false
 var priority := 0
 
 
+## It starts the download.
+## @experimental
 func start() -> Error:
 	if not HTTPManagerRequest.http_manager:
 		push_error("HTTPManager is not started.")

@@ -13,9 +13,13 @@ extends Node
 ## [/codeblock]
 
 ## [HTTPClient] request meta key.
-const HTTP_CLIENT_META_REQUEST := &"request"
+const META_REQUEST := &"request"
 ## [HTTPClient] response meta key.
-const HTTP_CLIENT_META_RESPONSE := &"response"
+const META_RESPONSE := &"response"
+## [HTTPClient] URL meta key.
+const META_URL := &"url"
+const META_REQUESTING := &"requesting"
+const META_REDIRECTS := &"redirects"
 
 ## Active [HTTPManagerClient]. If a contraint is processing, client continues
 ## active.
@@ -34,22 +38,25 @@ func _process(delta: float) -> void:
 		var error := hc.poll()
 		var status := hc.get_status()
 		if status == HTTPClient.STATUS_BODY:
-			var r: HTTPManagerResponse = hc.get_meta(HTTP_CLIENT_META_RESPONSE)
+			var r: HTTPManagerResponse = hc.get_meta(META_RESPONSE)
 			var chunk := hc.read_response_body_chunk()
 			if not chunk.is_empty():
 				r.body.append_array(chunk)
 		elif status == HTTPClient.STATUS_REQUESTING:
-			hc.set_meta("requesting", true)
+			hc.set_meta(META_REQUESTING, true)
 		elif status == HTTPClient.STATUS_CONNECTING:
 			pass
 		elif status == HTTPClient.STATUS_RESOLVING:
 			pass
 		elif status == HTTPClient.STATUS_CONNECTED:
-			if hc.get_meta("requesting", false):
+			if hc.get_meta(META_REQUESTING, false):
 				_on_success(hc)
 			else:
-				var r: HTTPManagerRequest = hc.get_meta(HTTP_CLIENT_META_REQUEST)
-				error = hc.request(r.route.method as HTTPClient.Method, hc.get_meta("url")[2], r.headers, r.body)
+				var r: HTTPManagerRequest = hc.get_meta(META_REQUEST)
+				error = hc.request(r.route.method as HTTPClient.Method,
+						hc.get_meta(META_URL)[HTTPManagerClient.ParsedUrl.PATH],
+						r.headers,
+						r.body)
 				if error:
 					_on_failure(hc)
 		elif status == HTTPClient.STATUS_DISCONNECTED:
@@ -76,7 +83,7 @@ func _process(delta: float) -> void:
 ## it.
 func cancel(r: HTTPManagerRequest) -> void:
 	for hc in _http_clients:
-		if hc.get_meta("request") == r:
+		if hc.get_meta(&"request") == r:
 			_on_failure(hc)
 			return
 	
@@ -88,7 +95,7 @@ func cancel(r: HTTPManagerRequest) -> void:
 ## is [code]null[/code], it cancels all the clients.
 func cancel_all(c: HTTPManagerClient) -> void:
 	for hc in _http_clients:
-		if not c or hc.get_meta(HTTP_CLIENT_META_REQUEST).route.client == c:
+		if not c or hc.get_meta(META_REQUEST).route.client == c:
 			_on_failure(hc)
 	
 	for c2 in _clients:
@@ -147,16 +154,6 @@ func fetch(r: HTTPManagerRequest) -> Variant:
 	return null
 #endregion
 
-## Adds TLS Options to a client. For now it does nothing.
-## @experimental
-func set_tls_options(client: HTTPManagerClient, tls_options: TLSOptions) -> Error:
-	if not client:
-		push_error("Client is null.")
-		return FAILED
-	
-	client.tls_options = tls_options
-	return OK
-
 ## Do not call this method. This method is used by HTTPManager classes to make
 ## next request if constraints are released.
 func _next(c: HTTPManagerClient) -> Error:
@@ -172,13 +169,16 @@ func _next(c: HTTPManagerClient) -> Error:
 		return ERR_PARSE_ERROR
 	
 	var parsed_url := hc.get_meta("url")
-	var error := hc.connect_to_host(parsed_url[0], parsed_url[1], r.tls_options)
+	var error := hc.connect_to_host(parsed_url[HTTPManagerClient.ParsedUrl.SCHEME]
+			+ parsed_url[HTTPManagerClient.ParsedUrl.DOMAIN],
+			parsed_url[HTTPManagerClient.ParsedUrl.PORT],
+			r.tls_options)
 	if error:
 		push_error(error_string(error))
 		return error
 	
-	hc.set_meta(HTTP_CLIENT_META_REQUEST, r)
-	hc.set_meta(HTTP_CLIENT_META_RESPONSE, HTTPManagerResponse.new())
+	hc.set_meta(META_REQUEST, r)
+	hc.set_meta(META_RESPONSE, HTTPManagerResponse.new())
 	_http_clients.append(hc)
 	if not c in _clients:
 		_clients.append(c)
@@ -193,18 +193,18 @@ func _next(c: HTTPManagerClient) -> Error:
 func _on_failure(http_client: HTTPClient) -> void:
 	_http_clients.erase(http_client)
 	
-	var r: HTTPManagerResponse = http_client.get_meta(HTTP_CLIENT_META_RESPONSE)
+	var r: HTTPManagerResponse = http_client.get_meta(META_RESPONSE)
 	r.headers = http_client.get_response_headers()
 	r.code = http_client.get_response_code() as HTTPClient.ResponseCode
 	push_error("Request error with code: ", r.code)
-	http_client.get_meta(HTTP_CLIENT_META_REQUEST).complete(r)
+	http_client.get_meta(META_REQUEST).complete(r)
 
 ## Called on request success.
 func _on_success(http_client: HTTPClient) -> void:
-	var r: HTTPManagerRequest = http_client.get_meta(HTTP_CLIENT_META_REQUEST)
-	var redirects: int = http_client.get_meta("redirects", 0)
+	var r: HTTPManagerRequest = http_client.get_meta(META_REQUEST)
+	var redirects: int = http_client.get_meta(META_REDIRECTS, 0)
 	
-	var response: HTTPManagerResponse = http_client.get_meta(HTTP_CLIENT_META_RESPONSE)
+	var response: HTTPManagerResponse = http_client.get_meta(META_RESPONSE)
 	response.code = http_client.get_response_code() as HTTPClient.ResponseCode
 	response.headers = http_client.get_response_headers()
 	response.successful = true
@@ -222,11 +222,15 @@ func _on_success(http_client: HTTPClient) -> void:
 				location = h.substr(9).strip_edges()
 		
 		if not location.is_empty() and _parse_url(http_client, location):
-			http_client.set_meta("redirects", redirects + 1)
+			http_client.set_meta(META_REDIRECTS, redirects + 1)
 			http_client.close()
-			http_client.set_meta("requesting", false)
-			var parsed_url: Array = http_client.get_meta("url")
-			var error := http_client.connect_to_host(parsed_url[0], parsed_url[1], r.tls_options)
+			http_client.set_meta(META_REQUESTING, false)
+			var parsed_url: Array = http_client.get_meta(META_URL)
+			var error := http_client.connect_to_host(
+					parsed_url[HTTPManagerClient.ParsedUrl.SCHEME]
+					+ parsed_url[HTTPManagerClient.ParsedUrl.DOMAIN],
+					parsed_url[HTTPManagerClient.ParsedUrl.PORT],
+					r.tls_options)
 			if not error:
 				return
 			
@@ -239,17 +243,8 @@ func _on_success(http_client: HTTPClient) -> void:
 
 ## Parses the URL.
 func _parse_url(http_client: HTTPClient, url: String) -> bool:
-	var re := RegEx.create_from_string("(?<host>https?:\\/\\/[a-zA-Z0-9\\.\\-]+)(:(?<port>[0-9]+))?(?<uri>.*)")
-	var result := re.search(url)
-	if not result:
-		push_error("Invalid URL: ", url)
+	var parsed_url := HTTPManagerClient.parse_url(url)
+	if parsed_url.is_empty():
 		return false
-	
-	var port_string := result.get_string("port")
-	http_client.set_meta("url", [
-		result.get_string("host"),
-		-1 if port_string.is_empty() else port_string.to_int(),
-		result.get_string("uri"),
-	])
-	
+	http_client.set_meta(META_URL, parsed_url)
 	return true

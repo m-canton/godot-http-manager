@@ -92,9 +92,37 @@ func _set_auth(type_credentials_string: String) -> void:
 func add_header(new_header: String) -> HTTPManagerRequest:
 	headers.append(new_header)
 	return self
+## Formats and sets a body. See [method MIME.var_to_string].
+func set_body(new_body, content_type := MIME.Type.NONE, attributes := {}) -> HTTPManagerRequest:
+	if content_type != MIME.Type.NONE:
+		for i in range(headers.size()):
+			if headers[i].begins_with("Content-Type:"):
+				headers.remove_at(i)
+				break
+		
+		if content_type == MIME.Type.URL_ENCODED:
+			if route and route.client:
+				body = route.client.parse_query(new_body)
+			else:
+				push_warning
+				body = ""
+		else:
+			body = MIME.var_to_string(new_body, content_type)
+		headers.append("Content-Type: " + MIME.type_to_string(content_type))
+	elif new_body is String:
+		body = new_body
+	else:
+		body = ""
+	
+	return self
 
-## [method HTTPManager.create_request_from_route] calls this method to parse and
-## add the url params.
+func set_tls_options(new_tls_options: TLSOptions) -> HTTPManagerRequest:
+	tls_options = new_tls_options
+	return self
+#endregion
+
+## [method HTTPManagerRoute.create_request] calls this method to parse and
+## set the url params.
 func set_url_params(new_params: Dictionary) -> Error:
 	var parts := route.uri_pattern.split("/")
 	var parsed_parts := PackedStringArray()
@@ -140,31 +168,6 @@ func set_url_params(new_params: Dictionary) -> Error:
 	
 	return OK
 
-## Formats and sets a body. See [method MIME.var_to_string].
-func set_body(new_body, content_type := MIME.Type.NONE, attributes := {}) -> HTTPManagerRequest:
-	if content_type != MIME.Type.NONE:
-		for i in range(headers.size()):
-			if headers[i].begins_with("Content-Type:"):
-				headers.remove_at(i)
-				break
-		
-		if content_type == MIME.Type.URL_ENCODED:
-			if route and route.client:
-				body = route.client.parse_query(new_body)
-			else:
-				push_warning
-				body = ""
-		else:
-			body = MIME.var_to_string(new_body, content_type)
-		headers.append("Content-Type: " + MIME.type_to_string(content_type))
-	elif new_body is String:
-		body = new_body
-	else:
-		body = ""
-	
-	return self
-#endregion
-
 ## Starts request.
 func start(listeners = {}) -> Error:
 	if not http_manager:
@@ -190,10 +193,9 @@ func start(listeners = {}) -> Error:
 	return http_manager.request(self)
 
 ## Creates a [OAuth2] with this request.
-func oauth2(port: int, bind_address := "127.0.0.1") -> OAuth2:
+func oauth2(port := 0, bind_address := "") -> OAuth2:
 	var oa := OAuth2.new()
-	oa.port = port
-	oa.bind_address = bind_address
+	oa.set_server(port, bind_address)
 	oa.request = self
 	return oa
 
