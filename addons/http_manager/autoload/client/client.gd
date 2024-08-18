@@ -53,12 +53,6 @@ static var _url_regex: RegEx
 ## @experimental
 @export var priority := 0
 
-@export_group("Constraint", "constraint_")
-## Active constraint set index. See [member constraint_sets].
-@export var constraint_current_set := 0
-## Constraint sets. See [HTTPManagerConstraintSet].
-@export var constraint_sets: Array[HTTPManagerConstraintSet] = []
-
 @export_group("URL Params", "url_param_")
 ## Replaces [code]true[/code] value by this string in url param values.
 @export var url_param_bool_true := "1"
@@ -66,6 +60,12 @@ static var _url_regex: RegEx
 @export var url_param_bool_false := "0"
 ## Array format for url param values. See [enum ArrayParamFormat].
 @export var url_param_array_format := ArrayParamFormat.MULTIPLE
+
+@export_group("Constraint", "constraint_")
+## Active constraint set index. See [member constraint_sets].
+@export var constraint_current_set := 0
+## Constraint sets. See [HTTPManagerConstraintSet].
+@export var constraint_sets: Array[HTTPManagerConstraintSet] = []
 
 ## Request queue.
 var _queue: Array[HTTPManagerRequest] = []

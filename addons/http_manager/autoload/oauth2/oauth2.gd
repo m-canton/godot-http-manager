@@ -120,8 +120,8 @@ func start(on_complete: Callable) -> Error:
 	
 	return OK
 
-
-static func generate_state(length := 50) -> String:
+## Returns a random state string.
+static func generate_state(length := 100) -> String:
 	var s := ""
 	var i := 0
 	while i < length:
@@ -129,16 +129,16 @@ static func generate_state(length := 50) -> String:
 		i += 1
 	return s
 
-## Returns a dictionary with random [code]"code_verifier"[/code] and
-## [code]"code_challenge"[/code].
+## Returns a [OAuth2PKCE] object with random code verifier and code challenge.
 static func generate_pkce(length := 43, method := OAuth2PKCE.Method.S256) -> OAuth2PKCE:
 	var pkce := OAuth2PKCE.new()
 	pkce.random()
 	return pkce
 
+## Returns default bind address.
 static func get_default_bind_address() -> String:
 	return ProjectSettings.get_setting(SETTING_NAME_BIND_ADDRESS, DEFAULT_BIND_ADDRESS)
 
-
+## Returns default port.
 static func get_default_port() -> int:
 	return ProjectSettings.get_setting(SETTING_NAME_PORT, DEFAULT_PORT)
