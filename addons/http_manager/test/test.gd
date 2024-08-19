@@ -163,7 +163,7 @@ func _on_create_or_update_object() -> void:
 	else:
 		if OBJECTS_UPDATE.create_request({
 			id = _editing_object,
-		}, validated_data, MIME.Type.JSON).start(_on_object_updated) == OK:
+		}).set_body(validated_data, MIME.Type.JSON).start(_on_object_updated) == OK:
 			edit_button.disabled = true
 			edit_reset_button.disabled = true
 

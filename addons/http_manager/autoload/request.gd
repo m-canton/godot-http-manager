@@ -30,13 +30,17 @@ var headers := PackedStringArray()
 ## Authentication.
 var use_auth := false
 ## Body.
-var body := ""
+var _body = null
+## Body MIME type.
+var _body_type := MIME.Type.NONE
+## Body MIME type attributes. Example: [code]{"charset": "UFT-8"}[/code].
+var _body_attributes := {}
 ## Mode.
 var mode := Mode.DEFAULT
 ## Indicates if this request is valid.
 var valid := true
-## Parsed URI.
-var _parsed_uri := ""
+## Parsed URL.
+var parsed_url: HTTPManagerClientParsedUrl
 
 ## TLS Options.
 var tls_options: TLSOptions
@@ -56,15 +60,31 @@ func complete(response: HTTPManagerResponse) -> void:
 			if not response.successful:
 				listeners[key].call(response)
 
-## Returns request URI or path with url params.
-func get_parsed_uri() -> String:
-	if route:
-		return _parsed_uri
-	return ""
+## Returns the current body.
+func get_body() -> Variant:
+	return _body
 
-## Returns request URL.
-func get_url() -> String:
-	return (route.client.base_url + _parsed_uri) if route and route.client else ""
+## Returns body as [String].
+func get_body_as_string() -> String:
+	if _body_type == MIME.Type.URL_ENCODED:
+		return _get_urlencoded_body_string()
+	return MIME.var_to_string(_body, _body_type, _body_attributes)
+
+## Returns body as [PackedByteArray].
+func get_body_as_buffer() -> PackedByteArray:
+	if _body_type == MIME.Type.URL_ENCODED:
+		return _get_urlencoded_body_string().to_utf8_buffer()
+	return MIME.var_to_buffer(_body, _body_type, _body_attributes)
+
+func _get_urlencoded_body_string() -> String:
+	if _body is String:
+		return _body
+	
+	if route and route.client:
+		return route.client.query_string_from_dict(_body) if _body is Dictionary else str(_body)
+	
+	push_error("'URL_ENCODED' requires client.")
+	return ""
 
 #region Authorization
 ## Adds Basic Authentication header.
@@ -96,27 +116,34 @@ func add_header(new_header: String) -> HTTPManagerRequest:
 	return self
 
 ## Formats and sets a body. See [method MIME.var_to_string].
-func set_body(new_body, content_type := MIME.Type.NONE, attributes := {}) -> HTTPManagerRequest:
-	if content_type != MIME.Type.NONE:
-		for i in range(headers.size()):
-			if headers[i].begins_with("Content-Type:"):
-				headers.remove_at(i)
-				break
-		
-		if content_type == MIME.Type.URL_ENCODED:
-			if route and route.client:
-				body = route.client.parse_query(new_body)
-			else:
-				push_warning
-				body = ""
-		else:
-			body = MIME.var_to_string(new_body, content_type)
-		headers.append("Content-Type: " + MIME.type_to_string(content_type))
-	elif new_body is String:
-		body = new_body
-	else:
-		body = ""
+func set_body(new_body, new_content_type := MIME.Type.NONE, new_attributes := {}) -> HTTPManagerRequest:
+	if route and route.method == HTTPManagerRoute.Method.GET:
+		push_error("GET request cannot set body.")
+		return self
 	
+	_body_type = new_content_type
+	_body_attributes = new_attributes
+	
+	var ct_found := false
+	for i in range(headers.size()):
+		if headers[i].begins_with("Content-Type:"):
+			if _body_type == MIME.Type.NONE:
+				headers.remove_at(i)
+			else:
+				headers[i] = MIME.type_to_content_type(_body_type, _body_attributes)
+			ct_found = true
+			break
+	
+	if not ct_found and _body_type != MIME.Type.NONE:
+		headers.append(MIME.type_to_content_type(_body_type, _body_attributes))
+	
+	_body = new_body
+	
+	return self
+
+func merge_body(new_body: Dictionary, overwrite := true) -> HTTPManagerRequest:
+	if _body is Dictionary:
+		_body.merge(new_body, overwrite)
 	return self
 
 func set_tls_options(new_tls_options: TLSOptions) -> HTTPManagerRequest:
@@ -167,7 +194,22 @@ func set_url_params(new_params: Dictionary) -> Error:
 			parsed_part = part
 		parsed_parts.append(parsed_part)
 	
-	_parsed_uri = "?".join(["/".join(parsed_parts), route.client.parse_query(new_params)])
+	parsed_url = route.client.parse_base_url()
+	if parsed_url == null:
+		push_error("Parsed URL is null.")
+		valid = false
+		return FAILED
+	
+	if parsed_url.path != "" and parsed_url.path.ends_with("/"):
+		push_error("Base URL cannot end with '/'.")
+		valid = false
+		return FAILED
+	
+	var subpath := "/".join(parsed_parts)
+	if not subpath.begins_with("/"):
+		push_error("Route must start with '/'.")
+	parsed_url.path += subpath
+	parsed_url.set_query(route.client.query_string_from_dict(new_params))
 	
 	return OK
 
@@ -204,9 +246,9 @@ func oauth2(port := 0, bind_address := "") -> OAuth2:
 
 ## Requests the OS to open URL. See [method OS.shell_open].
 func shell() -> Error:
-	var s := get_url()
-	if s.is_empty():
+	var url := parsed_url.get_url()
+	if url.is_empty():
 		push_error("URL is not valid.")
 		return FAILED
 	
-	return OS.shell_open(get_url())
+	return OS.shell_open(url)

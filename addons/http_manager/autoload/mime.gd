@@ -4,21 +4,21 @@ class_name MIME extends RefCounted
 ## 
 ## This class supports some MIME types. More support will be added.
 
-## MIME Types
+## MIME Types.
 enum Type {
-	NONE,
-	HTML,
-	JPG,
-	JSON,
-	PNG,
-	URL_ENCODED,
-	TEXT,
-	WEBP,
-	WEBM_AUDIO,
-	WEBM_VIDEO,
+	NONE, ## No type
+	HTML, ## text/html
+	JPG, ## image/jpeg
+	JSON, ## application/json
+	PNG, ## image/png
+	URL_ENCODED, ## application/x-www-form-urlencoded
+	TEXT, ## text/plain
+	WEBP, ## image/webp
+	WEBM_AUDIO, ## audio/webm
+	WEBM_VIDEO, ## video/webm
 }
 
-## MIME Type map
+## MIME Type map.
 const TypeDict := {
 	"audio": {
 		"webm": Type.WEBM_AUDIO,
@@ -41,6 +41,7 @@ const TypeDict := {
 	},
 }
 
+## Returns MIME type string from [enum Type].
 static func type_to_string(type: Type, attributes := {}) -> String:
 	for tkey: String in TypeDict:
 		for skey: String in TypeDict[tkey]:
@@ -51,6 +52,7 @@ static func type_to_string(type: Type, attributes := {}) -> String:
 				return s
 	return ""
 
+## Returns MIME type from [String].
 static func string_to_type(mimetype: String) -> Type:
 	var i := mimetype.find(";")
 	if i != -1:
@@ -63,6 +65,7 @@ static func string_to_type(mimetype: String) -> Type:
 	
 	return TypeDict.get(s[0], {}).get(s[1], Type.NONE)
 
+## Returns MIME type attributes as [Dictionary].
 static func get_attributes(mimetype: String) -> Dictionary:
 	var attributes := {}
 	for part in mimetype.split(";", false).slice(1):
@@ -73,12 +76,14 @@ static func get_attributes(mimetype: String) -> Dictionary:
 			push_warning("Invalid attribute: ", part)
 	return attributes
 
+## Returns Accept header.
 static func type_to_accept(mime: MIME.Type, attributes := {}) -> String:
 	var s := MIME.type_to_string(mime, attributes)
 	if s.is_empty():
 		return s
 	return "Accept: " + s
 
+## Returns Content-Type header.
 static func type_to_content_type(mime: MIME.Type, attributes := {}) -> String:
 	var s := MIME.type_to_string(mime, attributes)
 	if s.is_empty():
@@ -91,15 +96,15 @@ static func type_to_content_type(mime: MIME.Type, attributes := {}) -> String:
 static func buffer_to_var(buffer: PackedByteArray, type := Type.NONE, attributes := {}) -> Variant:
 	if type == Type.JSON:
 		return JSON.parse_string(buffer.get_string_from_utf8())
-	elif type in [Type.HTML, Type.TEXT]:
+	if type in [Type.HTML, Type.TEXT]:
 		return buffer.get_string_from_utf8()
-	elif type == Type.JPG:
+	if type == Type.JPG:
 		var image := Image.new()
 		return image if image.load_jpg_from_buffer(buffer) == OK else null
-	elif type == Type.PNG:
+	if type == Type.PNG:
 		var image := Image.new()
 		return image if image.load_png_from_buffer(buffer) == OK else null
-	elif type == Type.WEBP:
+	if type == Type.WEBP:
 		var image := Image.new()
 		return image if image.load_webp_from_buffer(buffer) == OK else null
 	push_warning("Type not supported.")
@@ -130,7 +135,7 @@ static func var_to_buffer(value, type := Type.NONE, attributes := {}) -> PackedB
 		push_warning("This variant cannot be converted to a buffer.")
 	return []
 
-## Converts variant to string.
+## Converts [Variant] to [String].
 static func var_to_string(value, type := Type.NONE, attributes := {}) -> String:
 	if type == Type.JSON:
 		return value if value is String else JSON.stringify(value, "", false)

@@ -16,9 +16,9 @@ extends Node
 const META_REQUEST := &"request"
 ## [HTTPClient] response meta key.
 const META_RESPONSE := &"response"
-## [HTTPClient] URL meta key.
-const META_URL := &"url"
+## [HTTPClient] requestings meta key.
 const META_REQUESTING := &"requesting"
+## [HTTPClient] redirects meta key.
 const META_REDIRECTS := &"redirects"
 
 ## Active [HTTPManagerClient]. If a contraint is processing, client continues
@@ -54,9 +54,9 @@ func _process(delta: float) -> void:
 			else:
 				var r: HTTPManagerRequest = hc.get_meta(META_REQUEST)
 				error = hc.request(r.route.method as HTTPClient.Method,
-						hc.get_meta(META_URL).get_full_path(),
+						r.parsed_url.get_full_path(),
 						r.headers,
-						r.body)
+						r.get_body_as_string())
 				if error:
 					_on_failure(hc)
 		elif status == HTTPClient.STATUS_DISCONNECTED:
@@ -137,11 +137,6 @@ func request(r: HTTPManagerRequest) -> Error:
 		push_error("Request route has null client.")
 		return FAILED
 	
-	var uri := r.get_parsed_uri()
-	if uri.is_empty():
-		push_error("'uri' is empty. See the parse errors.")
-		return FAILED
-	
 	client.queue(r)
 	_next(client)
 	
@@ -169,12 +164,8 @@ func _next(c: HTTPManagerClient) -> Error:
 		return OK
 	
 	var hc := HTTPClient.new()
-	if not _parse_url(hc, r.route.client.base_url + r.get_parsed_uri()):
-		return ERR_PARSE_ERROR
-	
-	var parsed_url := hc.get_meta("url")
-	var error := hc.connect_to_host(parsed_url.get_host(),
-			parsed_url.port,
+	var error := hc.connect_to_host(r.parsed_url.get_host(),
+			r.parsed_url.port,
 			r.tls_options)
 	if error:
 		push_error(error_string(error))
@@ -224,14 +215,14 @@ func _on_success(http_client: HTTPClient) -> void:
 			if h.begins_with("Location:"):
 				location = h.substr(9).strip_edges()
 		
-		if not location.is_empty() and _parse_url(http_client, location):
+		r.parsed_url = HTTPManagerClient.parse_url(location)
+		if not location.is_empty() and r.parsed_url:
 			http_client.set_meta(META_REDIRECTS, redirects + 1)
 			http_client.close()
 			http_client.set_meta(META_REQUESTING, false)
-			var parsed_url: HTTPManagerClientParsedUrl = http_client.get_meta(META_URL)
 			var error := http_client.connect_to_host(
-					parsed_url.get_host(),
-					parsed_url.port,
+					r.parsed_url.get_host(),
+					r.parsed_url.port,
 					r.tls_options)
 			if not error:
 				return
@@ -242,11 +233,3 @@ func _on_success(http_client: HTTPClient) -> void:
 	_http_clients.erase(http_client)
 	r.complete(response)
 	_next(r.route.client)
-
-## Parses the URL.
-func _parse_url(http_client: HTTPClient, url: String) -> bool:
-	var parsed_url := HTTPManagerClient.parse_url(url)
-	if parsed_url == null:
-		return false
-	http_client.set_meta(META_URL, parsed_url)
-	return true

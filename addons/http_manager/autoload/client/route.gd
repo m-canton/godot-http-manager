@@ -35,8 +35,7 @@ enum Method {
 
 
 ## Creates a request to this route. Parses URI pattern with url params.
-## Also it can set request body. See [method HTTPManagerRequest.set_body].
-func create_request(url_params := {}, body = null, content_type := MIME.Type.NONE, attributes := {}) -> HTTPManagerRequest:
+func create_request(url_params := {}) -> HTTPManagerRequest:
 	var r := HTTPManagerRequest.new()
 	
 	r.route = self
@@ -53,9 +52,7 @@ func create_request(url_params := {}, body = null, content_type := MIME.Type.NON
 		if not h in r.headers:
 			r.headers.append(h)
 	
-	if r.set_url_params(url_params) == OK:
-		r.set_body(body, content_type, attributes)
-	else:
+	if r.set_url_params(url_params):
 		r.valid = false
 	
 	return r

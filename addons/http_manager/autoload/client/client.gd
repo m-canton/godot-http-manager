@@ -142,7 +142,7 @@ func _current_constraints() -> Array[HTTPManagerConstraint]:
 	return constraint_sets[constraint_current_set].constraints
 
 ## Returns a parsed query [Dictionary] as [String].
-func parse_query(query: Dictionary) -> String:
+func query_string_from_dict(query: Dictionary) -> String:
 	var s := ""
 	for key in query:
 		s += "&"
@@ -184,6 +184,9 @@ func parse_query(query: Dictionary) -> String:
 				s += str(key, "=", str(value).uri_encode())
 	
 	return s.substr(1)
+
+func parse_base_url() -> HTTPManagerClientParsedUrl:
+	return HTTPManagerClient.parse_url(base_url)
 
 ## Returns clients dir from project settings.
 static func get_clients_dir() -> String:
