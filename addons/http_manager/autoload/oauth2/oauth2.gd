@@ -21,19 +21,21 @@ const UNRESERVED_CHARACTERS := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv
 
 ## Request reference.
 var request: HTTPManagerRequest
-## Server port.
-var _port := 0
-## Server address.
-var _bind_address := ""
 ## Redirect TCP server.
-var _redirect_server := TCPServer.new()
+var _redirect_server: TCPServer
 ## Loads local HTML file to display in the redirect URI: <bind_address>:<port>.
 ## See [method set_redirect_html].
 var _redirect_html := ""
 ## Server duration.
 var _duration := 120.0
+## PKCE.
+var _pkce: OAuth2PKCE
+## State.
+var _state := ""
 ## Current time. See [member duration].
 var _time := 0.0
+## Parsed redirect URI.
+var _parsed_redirect_uri: HTTPManagerClientParsedUrl
 
 
 func _process(delta: float) -> void:
@@ -59,15 +61,21 @@ func _process(delta: float) -> void:
 			request.complete(response)
 			queue_free()
 
+#region Chain Methods
 ## Sets a HTML code to show in the redirect URI.
-func set_redirect_html(redirect_html: String) -> OAuth2:
-	_redirect_html = redirect_html
+func set_redirect_html(html) -> OAuth2:
+	if html is String:
+		_redirect_html = html
+	elif html is HTMLDocument:
+		_redirect_html = html.text
+	else:
+		push_warning("'html' type is not valid.")
 	return self
 
 ## Sets default redirect HTML code. See [methodd set_redirect_html] to set
 ## a custom code.
 func set_default_redirect_html() -> OAuth2:
-	_redirect_html = HTMLDocument.new().add_doctype().start_html({
+	set_redirect_html(HTMLDocument.new().add_doctype().start_html({
 		lang = "en",
 	}) \
 		.start_head() \
@@ -78,7 +86,7 @@ func set_default_redirect_html() -> OAuth2:
 				.add_text("Hello world!") \
 			.close_tag() \
 		.close_tag() \
-	.close_tag().text
+	.close_tag())
 	
 	return self
 
@@ -88,10 +96,29 @@ func set_pkce(code_key: String, code_length := 43, method := OAuth2PKCE.Method.S
 	push_error("Not implemented.")
 	return self
 
-## Sets local server port and bind address. See [method TCPServer.listen]
-func set_server(port := 0, bind_address := "") -> void:
-	_bind_address = OAuth2.get_default_bind_address() if bind_address == "" else bind_address
-	_port = OAuth2.get_default_port() if port == 0 else port
+## Sets random state. Minimum length is 32.
+func set_state(length := 100, param := "state") -> OAuth2:
+	length = max(length, 32)
+	_state = OAuth2.generate_state(length)
+	request.parsed_url.query_param_join(param, _state)
+	return self
+
+## Sets redirect URI.
+func set_redirect_uri(new_uri: String, param := "redirect_uri") -> OAuth2:
+	_parsed_redirect_uri = HTTPManagerClient.parse_url(new_uri)
+	if param != "":
+		request.parsed_url.query_param_join(param, new_uri)
+	return self
+#endregion
+
+func get_state() -> String:
+	return _state
+
+## Enables local server using [member _parsed_redirect_uri]. See 
+## [method set_redirect_uri].
+func set_server(enabled := true) -> OAuth2:
+	_redirect_server = TCPServer.new() if enabled else null
+	return self
 
 ## Starts the OAuth 2.0. Frees other [OAuth2].
 func start(on_complete: Callable) -> Error:
@@ -107,16 +134,29 @@ func start(on_complete: Callable) -> Error:
 	
 	request.set_meta("listeners", { HTTPManagerRequest.Listener.COMPLETE: on_complete })
 	
-	var error := _redirect_server.listen(_port, _bind_address)
-	if error:
-		push_error("It cannot listen the port.")
-		return error
+	var error := OK
+	if _redirect_server:
+		if not _parsed_redirect_uri:
+			push_error("Redirect server requires non-null '_parsed_redirect_uri'.")
+			return error
+		
+		var domain := _parsed_redirect_uri.domain
+		if domain == "localhost": domain = "127.0.0.1"
+		if not domain.is_valid_ip_address():
+			push_error("Redirect server requires a domain as IP.")
+			return error
+		
+		error = _redirect_server.listen(_parsed_redirect_uri.port, domain)
+		if error:
+			push_error("It cannot listen the port.")
+			return error
 	
 	error = request.shell()
 	if error:
 		return error
 	
-	HTTPManagerRequest.http_manager.add_child(self)
+	if _redirect_server:
+		HTTPManagerRequest.http_manager.add_child(self)
 	
 	return OK
 

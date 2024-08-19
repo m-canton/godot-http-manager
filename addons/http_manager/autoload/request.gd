@@ -238,9 +238,8 @@ func start(listeners = {}) -> Error:
 	return http_manager.request(self)
 
 ## Creates a [OAuth2] with this request.
-func oauth2(port := 0, bind_address := "") -> OAuth2:
+func oauth2() -> OAuth2:
 	var oa := OAuth2.new()
-	oa.set_server(port, bind_address)
 	oa.request = self
 	return oa
 

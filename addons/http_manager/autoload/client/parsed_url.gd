@@ -9,11 +9,7 @@ var port := -1
 ## URL path.
 var path := ""
 ## URL query.
-var query := "":
-	set(value):
-		if query != value:
-			query = value
-			_query_changed = true
+var _query := ""
 ## URL fragment.
 var fragment := ""
 ## Indicates if [member query] has changed.
@@ -36,14 +32,18 @@ func get_host() -> String:
 ## Returns path, query and fragment with delimiters.
 func get_full_path() -> String:
 	var s := path
-	if query != "": s += "?" + query
+	if _query != "": s += "?" + _query
 	if fragment != "": s += "#" + fragment
 	return s
+
+## Returns query string.
+func get_query_string() -> String:
+	return _query
 
 ## Returns query as [PackedStringArray].
 func get_query_array() -> PackedStringArray:
 	if _query_changed:
-		_query_array = query.split("&", false)
+		_query_array = _query.split("&", false)
 	return _query_array
 
 ## Returns query as [Dictionary].
@@ -56,19 +56,29 @@ func get_query_dict() -> Dictionary:
 		dict[pp[0]] = null if pp.size() == 1 else pp[1]
 	return dict
 
+## Joins query param to the end. This method does not check if this param
+## exists. See [method merge_query] for more control.
+func query_param_join(param: String, value) -> void:
+	if _query != "": _query += "&"
+	var p := str(param, "&", value)
+	_query += p
+	if not _query_changed: _query_array.append(p)
+
 ## Sets query. Accepts [String], [Array], [PackedStringArray], and [Dictionary].
 func set_query(new_query) -> void:
 	if new_query is String:
-		query = new_query
+		_query = new_query
 	elif new_query is Array or new_query is PackedStringArray:
-		query = "&".join(new_query)
+		_query = "&".join(new_query)
 	elif new_query is Dictionary:
 		var s := ""
 		for key in new_query:
 			s += str("&", key, "=", new_query[key])
-		query = s.substr(1)
+		_query = s.substr(1)
 	else:
 		push_error("'new_query' type cannot be parsed.")
+		return
+	_query_changed = true
 
 ## Merges query.
 func merge_query(new_query: Dictionary, overwrite := true) -> void:
