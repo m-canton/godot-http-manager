@@ -54,7 +54,7 @@ func _process(delta: float) -> void:
 			else:
 				var r: HTTPManagerRequest = hc.get_meta(META_REQUEST)
 				error = hc.request(r.route.method as HTTPClient.Method,
-						hc.get_meta(META_URL)[HTTPManagerClient.ParsedUrl.PATH],
+						hc.get_meta(META_URL).get_full_path(),
 						r.headers,
 						r.body)
 				if error:
@@ -104,10 +104,14 @@ func cancel_all(c: HTTPManagerClient) -> void:
 #endregion
 
 #region Start Requests
+## Starts a download.
+## @experimental
 func download(d: HTTPManagerDownload) -> Error:
 	if not d:
 		push_error("Download is null.")
 		return FAILED
+	
+	push_error("Not implemented.")
 	
 	return OK
 
@@ -169,9 +173,8 @@ func _next(c: HTTPManagerClient) -> Error:
 		return ERR_PARSE_ERROR
 	
 	var parsed_url := hc.get_meta("url")
-	var error := hc.connect_to_host(parsed_url[HTTPManagerClient.ParsedUrl.SCHEME]
-			+ parsed_url[HTTPManagerClient.ParsedUrl.DOMAIN],
-			parsed_url[HTTPManagerClient.ParsedUrl.PORT],
+	var error := hc.connect_to_host(parsed_url.get_host(),
+			parsed_url.port,
 			r.tls_options)
 	if error:
 		push_error(error_string(error))
@@ -225,11 +228,10 @@ func _on_success(http_client: HTTPClient) -> void:
 			http_client.set_meta(META_REDIRECTS, redirects + 1)
 			http_client.close()
 			http_client.set_meta(META_REQUESTING, false)
-			var parsed_url: Array = http_client.get_meta(META_URL)
+			var parsed_url: HTTPManagerClientParsedUrl = http_client.get_meta(META_URL)
 			var error := http_client.connect_to_host(
-					parsed_url[HTTPManagerClient.ParsedUrl.SCHEME]
-					+ parsed_url[HTTPManagerClient.ParsedUrl.DOMAIN],
-					parsed_url[HTTPManagerClient.ParsedUrl.PORT],
+					parsed_url.get_host(),
+					parsed_url.port,
 					r.tls_options)
 			if not error:
 				return
@@ -244,7 +246,7 @@ func _on_success(http_client: HTTPClient) -> void:
 ## Parses the URL.
 func _parse_url(http_client: HTTPClient, url: String) -> bool:
 	var parsed_url := HTTPManagerClient.parse_url(url)
-	if parsed_url.is_empty():
+	if parsed_url == null:
 		return false
 	http_client.set_meta(META_URL, parsed_url)
 	return true

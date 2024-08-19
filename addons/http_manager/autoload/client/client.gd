@@ -26,6 +26,8 @@ enum ParsedUrl {
 	DOMAIN, ## Domain.
 	PORT, ## Port.
 	PATH, ## Path.
+	QUERY, ## Query.
+	FRAGMENT, ## Fragment.
 }
 
 ## Setting name for client data dir to save data.
@@ -188,28 +190,23 @@ static func get_clients_dir() -> String:
 	return ProjectSettings.get_setting(SETTING_NAME_DIR, DEFAULT_DIR)
 
 ## Returns URL parts. See [enum ParsedUrl]
-static func parse_url(url: String) -> Dictionary:
+static func parse_url(url: String) -> HTTPManagerClientParsedUrl:
 	if not _url_regex is RegEx:
-		_url_regex = RegEx.create_from_string("(?<scheme>https?):\\/\\/(?<domain>[a-zA-Z0-9\\.\\-]+)(:(?<port>[0-9]+))?(?<path>.*)?")
+		_url_regex = RegEx.create_from_string("(?<scheme>https?):\\/\\/(?<domain>[a-zA-Z0-9\\.\\-]+)(:(?<port>[0-9]+))?(?<path>[^\\?#]*)(\\?(?<query>[^\\?#]*))?(#(?<fragment>[^\\?#]*))?")
 	
 	var result := _url_regex.search(url)
 	if not result:
 		push_error("Invalid URL: ", url)
-		return {}
+		return null
+	
+	var parsed_url := HTTPManagerClientParsedUrl.new()
+	parsed_url.scheme = result.get_string("scheme")
+	parsed_url.domain = result.get_string("domain")
 	
 	var port_string := result.get_string("port")
-	return {
-		ParsedUrl.SCHEME: result.get_string("scheme"),
-		ParsedUrl.DOMAIN: result.get_string("domain"),
-		ParsedUrl.PORT: -1 if port_string == "" else port_string.to_int(),
-		ParsedUrl.PATH: result.get_string("path"),
-	}
-
-## Parsed URL to string. See [method parse_url].
-static func parsed_url_to_string(dict: Dictionary) -> String:
-	var s := dict.get(ParsedUrl.DOMAIN, "")
-	var scheme: String = dict.get(ParsedUrl.SCHEME, "")
-	if scheme != "": s = scheme + "://" + s
-	var port: int = dict.get(ParsedUrl.PORT, -1)
-	if port != -1: s += ":" + str(port)
-	return s + dict.get(ParsedUrl.PATH, "")
+	parsed_url.port = -1 if port_string == "" else port_string.to_int()
+	
+	parsed_url.path = result.get_string("path")
+	parsed_url.query = result.get_string("query")
+	parsed_url.fragment = result.get_string("fragment")
+	return parsed_url
