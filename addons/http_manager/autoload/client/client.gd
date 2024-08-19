@@ -34,6 +34,8 @@ enum ParsedUrl {
 const SETTING_NAME_DIR := "addons/http_manager/clients/data_dir"
 ## Default setting value for clients dir.
 const DEFAULT_DIR := "user://addons/http_manager"
+## Client file name.
+const CLIENT_FILENAME := "client.ini"
 
 static var _url_regex: RegEx
 
@@ -55,6 +57,8 @@ static var _url_regex: RegEx
 ## @experimental
 @export var priority := 0
 
+@export var data: HTTPManagerClientData
+
 @export_group("URL Params", "url_param_")
 ## Replaces [code]true[/code] value by this string in url param values.
 @export var url_param_bool_true := "1"
@@ -71,12 +75,6 @@ static var _url_regex: RegEx
 
 ## Request queue.
 var _queue: Array[HTTPManagerRequest] = []
-## Queue order.
-var _queue_asc := false:
-	set(value):
-		if _queue_asc != value:
-			_queue_asc = value
-			_queue.reverse()
 
 ## Processes constraints.
 func process(delta: float) -> bool:
@@ -85,15 +83,18 @@ func process(delta: float) -> bool:
 			return c.process(delta) and not _queue.is_empty()
 	return false
 
+func cancel_request(r: HTTPManagerRequest) -> bool:
+	var i := _queue.find(r)
+	if i == -1: return false
+	_queue.remove_at(i)
+	return true
+
 ## Clears the queue.
-func clear() -> void:
+func cancel_requests() -> void:
 	_queue.clear()
 
 ## Appends a request to the queue.
 func queue(r: HTTPManagerRequest) -> void:
-	if _queue_asc:
-		_queue_asc = false
-	
 	if r.priority < 0:
 		r.priority = r.route.priority
 	
@@ -110,9 +111,7 @@ func queue(r: HTTPManagerRequest) -> void:
 
 ## Returns the next requestand removes it from the queue.
 func next() -> HTTPManagerRequest:
-	if not _queue_asc:
-		_queue_asc = true
-	return _queue.pop_back()
+	return _queue.pop_front()
 
 ## Returns [code]true[/code] if the next request can start depending on the
 ## constraints.
@@ -192,6 +191,22 @@ func parse_base_url() -> HTTPManagerClientParsedUrl:
 static func get_clients_dir() -> String:
 	return ProjectSettings.get_setting(SETTING_NAME_DIR, DEFAULT_DIR)
 
+## Returns client file if it exists.
+static func get_client_file(subpath: String) -> ConfigFile:
+	var cf := ConfigFile.new()
+	var path := get_clients_dir().path_join(subpath).path_join(CLIENT_FILENAME)
+	var error := cf.load(path)
+	cf.set_meta(&"error", error)
+	cf.set_meta(&"path", path)
+	return cf
+
+static func save_client_file(file: ConfigFile) -> Error:
+	var path: String = file.get_meta(&"path", "")
+	if path.is_empty():
+		push_error("'path' is empty.")
+		return FAILED
+	return file.save(path)
+
 ## Returns URL parts. See [enum ParsedUrl]
 static func parse_url(url: String) -> HTTPManagerClientParsedUrl:
 	if not _url_regex is RegEx:
@@ -210,6 +225,6 @@ static func parse_url(url: String) -> HTTPManagerClientParsedUrl:
 	parsed_url.port = -1 if port_string == "" else port_string.to_int()
 	
 	parsed_url.path = result.get_string("path")
-	parsed_url.query = result.get_string("query")
+	parsed_url.set_query(result.get_string("query"))
 	parsed_url.fragment = result.get_string("fragment")
 	return parsed_url

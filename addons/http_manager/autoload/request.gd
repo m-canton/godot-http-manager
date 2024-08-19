@@ -49,7 +49,7 @@ var tls_options: TLSOptions
 ## response is completed or gets a error.
 func complete(response: HTTPManagerResponse) -> void:
 	completed.emit(response)
-	var listeners: Dictionary = get_meta("listeners", {})
+	var listeners: Dictionary = get_meta(&"listeners", {})
 	for key in listeners:
 		if key == Listener.COMPLETE:
 			listeners[key].call(response)
@@ -59,6 +59,16 @@ func complete(response: HTTPManagerResponse) -> void:
 		elif key == Listener.FAILURE:
 			if not response.successful:
 				listeners[key].call(response)
+
+## Do not call this method. It saves OAuth 2.0 tokens and starts the pending
+## request.
+func complete_with_auth2_token(response: HTTPManagerResponse) -> void:
+	var error := route.client.data.save_oauth2_token_from_response(response)
+	if error:
+		push_error("It cannot start the pending request. OAuth2 Token Save Error.")
+		return
+	
+	start()
 
 ## Returns the current body.
 func get_body() -> Variant:
@@ -115,7 +125,7 @@ func add_header(new_header: String) -> HTTPManagerRequest:
 	headers.append(new_header)
 	return self
 
-## Formats and sets a body. See [method MIME.var_to_string].
+## Sets the body. [HTTPManager] uses [method MIME.var_to_string] to convert it.
 func set_body(new_body, new_content_type := MIME.Type.NONE, new_attributes := {}) -> HTTPManagerRequest:
 	if route and route.method == HTTPManagerRoute.Method.GET:
 		push_error("GET request cannot set body.")
@@ -141,11 +151,13 @@ func set_body(new_body, new_content_type := MIME.Type.NONE, new_attributes := {}
 	
 	return self
 
+## Merges body if current body is [Dictionary].
 func merge_body(new_body: Dictionary, overwrite := true) -> HTTPManagerRequest:
 	if _body is Dictionary:
 		_body.merge(new_body, overwrite)
 	return self
 
+## Sets TLS options.
 func set_tls_options(new_tls_options: TLSOptions) -> HTTPManagerRequest:
 	tls_options = new_tls_options
 	return self
@@ -184,11 +196,11 @@ func set_url_params(new_params: Dictionary) -> Error:
 			new_params.erase(part)
 			
 			if param_value is int:
-				parsed_part = str(parsed_part)
+				parsed_part = str(param_value)
 			elif param_value is StringName or param_value is String:
 				parsed_part = String(param_value)
 			else:
-				push_error("'%s' url param must be integer or string: %s" % [part, route.resource_path])
+				push_error("'%s' URL param must be integer or string: %s" % [part, route.resource_path])
 				return FAILED
 		else:
 			parsed_part = part
@@ -214,13 +226,13 @@ func set_url_params(new_params: Dictionary) -> Error:
 	return OK
 
 ## Starts request.
-func start(listeners = {}) -> Error:
+func start(listeners = null) -> Error:
 	if not http_manager:
 		push_error("HTTPManager is disabled.")
 		return FAILED
 	
 	if listeners is Callable:
-		set_meta("listeners", {
+		set_meta(&"listeners", {
 			Listener.COMPLETE: listeners,
 		})
 	elif listeners is Array:
@@ -233,14 +245,48 @@ func start(listeners = {}) -> Error:
 			if listeners[1] is Callable:
 				dict[Listener.FAILURE] = listeners[1]
 	elif listeners is Dictionary:
-		set_meta("listeners", listeners)
+		set_meta(&"listeners", listeners)
+	
+	if not valid:
+		var response := HTTPManagerResponse.new()
+		response.successful = false
+		response.body = "No Valid Request.".to_ascii_buffer()
+		response.headers.append(MIME.type_to_content_type(MIME.Type.TEXT))
+		complete(response)
+		return FAILED
+	
+	if route.auth_type == HTTPManagerRoute.AuthType.OAUTH2_CHECK:
+		return OAuth2.check(self)
+	elif route.auth_type == HTTPManagerRoute.AuthType.API_KEY_CHECK:
+		parsed_url.query_param_join("key", route.auth_route.client.data.get_api_key())
 	
 	return http_manager.request(self)
 
-## Creates a [OAuth2] with this request.
+## Creates a [OAuth2] with this request. Adds the following query params using
+## [member route].client.data: response_type, redirect_uri and client_id.
 func oauth2() -> OAuth2:
 	var oa := OAuth2.new()
 	oa.request = self
+	
+	if valid:
+		var data := route.client.data
+		if data:
+			var client_id := data.get_client_id()
+			if client_id.is_empty():
+				push_error("Invalid OAuth 2.0 request: 'client.data' is null.")
+				valid = false
+			elif route.auth_type != HTTPManagerRoute.AuthType.OAUTH2_CODE:
+				push_error("Invalid OAuth 2.0 request: 'route.auth_type' must be OAuth 2.0 Authorization Code type.")
+				valid = false
+			else:
+				parsed_url.merge_query({
+					response_type = "code",
+					redirect_uri = OAuth2.get_local_server_redirect_uri(data.subpath),
+					client_id = data.get_client_id(),
+				})
+		else:
+			push_error("Invalid OAuth 2.0 request: 'route.client.data' is null.")
+	
 	return oa
 
 ## Requests the OS to open URL. See [method OS.shell_open].
@@ -251,3 +297,40 @@ func shell() -> Error:
 		return FAILED
 	
 	return OS.shell_open(url)
+
+## Parses a request string from local server.
+static func parse_string(text: String) -> HTTPManagerRequest:
+	var lines := text.replace("\r\n", "\n").split("\n", false)
+	if lines.size() < 2:
+		push_error("It needs 2 lines to parse.")
+		return null
+	
+	var l0 := lines[0].split(" ", false)
+	var l1 := lines[1].trim_prefix("Host: ")
+	lines = lines.slice(2)
+	
+	if l0.size() != 3:
+		push_error("Line 0 is not valid: ", l0)
+		return null
+	
+	if l0[2] != "HTTP/1.1":
+		push_error("It only supports HTTP/1.1: ", l0)
+		return null
+	
+	if not l0[1].begins_with("/"):
+		push_error("URL path must start with '/': ", l0)
+		return null
+	
+	var r := HTTPManagerRequest.new()
+	r.parsed_url = HTTPManagerClient.parse_url("http://" + l1 + l0[1])
+	if not r.parsed_url:
+		push_error("Request URL is not valid.")
+		return null
+	
+	r.route = HTTPManagerRoute.new()
+	r.route.method = HTTPManagerRoute.Method.get(l0[0])
+	
+	for line in lines:
+		r.add_header(line)
+	
+	return r

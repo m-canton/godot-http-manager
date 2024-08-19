@@ -141,3 +141,18 @@ static func load_from_file(path: String) -> HTMLDocument:
 	var doc := HTMLDocument.new()
 	doc.text = FileAccess.get_file_as_string(path)
 	return doc
+
+
+static func create_default() -> HTMLDocument:
+	return HTMLDocument.new().add_doctype().start_html({
+		lang = "en",
+	}) \
+		.start_head() \
+			.add_meta({ charset = "UTF-8" }) \
+		.close_tag() \
+		.start_body() \
+			.start_p() \
+				.add_text("Hello world!") \
+			.close_tag() \
+		.close_tag() \
+	.close_tag()

@@ -93,7 +93,7 @@ static func type_to_content_type(mime: MIME.Type, attributes := {}) -> String:
 
 #region Buffer
 ## Converts buffer to variant.
-static func buffer_to_var(buffer: PackedByteArray, type := Type.NONE, attributes := {}) -> Variant:
+static func buffer_to_var(buffer: PackedByteArray, type := Type.NONE, _attributes := {}) -> Variant:
 	if type == Type.JSON:
 		return JSON.parse_string(buffer.get_string_from_utf8())
 	if type in [Type.HTML, Type.TEXT]:
@@ -111,7 +111,7 @@ static func buffer_to_var(buffer: PackedByteArray, type := Type.NONE, attributes
 	return []
 
 ## Converts variant to buffer.
-static func var_to_buffer(value, type := Type.NONE, attributes := {}) -> PackedByteArray:
+static func var_to_buffer(value, type := Type.NONE, _attributes := {}) -> PackedByteArray:
 	if type == Type.JSON:
 		return var_to_string(value).to_utf8_buffer()
 	elif type in [Type.URL_ENCODED, Type.HTML, Type.TEXT]:

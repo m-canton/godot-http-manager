@@ -9,6 +9,7 @@ func _enter_tree() -> void:
 	_set_setting(HTTPManagerClient.SETTING_NAME_DIR, HTTPManagerClient.DEFAULT_DIR)
 	_set_setting(OAuth2.SETTING_NAME_BIND_ADDRESS, OAuth2.DEFAULT_BIND_ADDRESS)
 	_set_setting(OAuth2.SETTING_NAME_PORT, OAuth2.DEFAULT_PORT)
+	_set_setting(OAuth2.SETTING_NAME_CALLBACK_PATH, OAuth2.DEFAULT_CALLBACK_PATH)
 
 
 func _exit_tree() -> void:

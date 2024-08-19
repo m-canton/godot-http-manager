@@ -53,7 +53,8 @@ func get_query_dict() -> Dictionary:
 		if p.is_empty(): continue
 		var pp := p.split("=")
 		if pp[0].is_empty(): continue
-		dict[pp[0]] = null if pp.size() == 1 else pp[1].uri_decode()
+		if pp.size() == 1: dict[pp[0]] = null
+		else: pp[1].uri_decode()
 	return dict
 
 ## Joins query param to the end. This method does not check if this param
@@ -73,7 +74,7 @@ func set_query(new_query) -> void:
 	elif new_query is Dictionary:
 		var s := ""
 		for key in new_query:
-			s += "&" + key + "=" + str(new_query[key].uri_encode())
+			s += "&" + key + "=" + str(new_query[key]).uri_encode()
 		_query = s.substr(1)
 	else:
 		push_error("'new_query' type cannot be parsed.")

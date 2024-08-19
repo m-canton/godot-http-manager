@@ -87,9 +87,7 @@ func cancel(r: HTTPManagerRequest) -> void:
 			_on_failure(hc)
 			return
 	
-	var i = r.route.client._queue.find(r)
-	if i != -1:
-		r.route.client._queue.remove_at(i)
+	r.route.client.cancel_request(r)
 
 ## Cancels all the requests and clears queue from [param c] client. If [param c]
 ## is [code]null[/code], it cancels all the clients.
@@ -100,7 +98,7 @@ func cancel_all(c: HTTPManagerClient) -> void:
 	
 	for c2 in _clients:
 		if c2 == c:
-			c.clear()
+			c.cancel_requests()
 #endregion
 
 #region Start Requests
@@ -115,8 +113,7 @@ func download(d: HTTPManagerDownload) -> Error:
 	
 	return OK
 
-## Do not call this method. Use [method HTTPManagerRoute.create_request]
-## instead.
+## Do not call this method. Use [method HTTPManagerRequest.start] instead.
 ## @experimental
 func request(r: HTTPManagerRequest) -> Error:
 	if not r:
@@ -153,8 +150,8 @@ func fetch(r: HTTPManagerRequest) -> Variant:
 	return null
 #endregion
 
-## Do not call this method. This method is used by HTTPManager classes to make
-## next request if constraints are released.
+## Do not call this method. This method is used by HTTPManager to make next
+## request if constraints are released.
 func _next(c: HTTPManagerClient) -> Error:
 	if not c.can_next():
 		return OK

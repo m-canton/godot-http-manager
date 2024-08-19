@@ -7,6 +7,8 @@
 script = ExtResource("2_dyxkm")
 client = ExtResource("1_ekg23")
 uri_pattern = "/objects"
-headers = []
+description = ""
+headers = PackedStringArray()
 method = 2
 priority = 0
+auth_type = 0
