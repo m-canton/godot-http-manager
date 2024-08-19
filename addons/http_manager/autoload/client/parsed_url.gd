@@ -18,7 +18,8 @@ var query := "":
 var fragment := ""
 ## Indicates if [member query] has changed.
 var _query_changed := false
-var _parsed_query: PackedStringArray
+## Query params.
+var _query_array: PackedStringArray
 
 ## Returns URL string.
 func get_url() -> String:
@@ -42,8 +43,8 @@ func get_full_path() -> String:
 ## Returns query as [PackedStringArray].
 func get_query_array() -> PackedStringArray:
 	if _query_changed:
-		_parsed_query = query.split("&", false)
-	return _parsed_query
+		_query_array = query.split("&", false)
+	return _query_array
 
 ## Returns query as [Dictionary].
 func get_query_dict() -> Dictionary:
@@ -52,17 +53,34 @@ func get_query_dict() -> Dictionary:
 		if p.is_empty(): continue
 		var pp := p.split("=")
 		if pp[0].is_empty(): continue
-		if pp.size() == 1:
-			dict[pp[0]] = null
-		else:
-			dict[pp[0]] = pp[1]
+		dict[pp[0]] = null if pp.size() == 1 else pp[1]
 	return dict
+
+## Sets query. Accepts [String], [Array], [PackedStringArray], and [Dictionary].
+func set_query(new_query) -> void:
+	if new_query is String:
+		query = new_query
+	elif new_query is Array or new_query is PackedStringArray:
+		query = "&".join(new_query)
+	elif new_query is Dictionary:
+		var s := ""
+		for key in new_query:
+			s += str("&", key, "=", new_query[key])
+		query = s.substr(1)
+	else:
+		push_error("'new_query' type cannot be parsed.")
+
+## Merges query.
+func merge_query(new_query: Dictionary, overwrite := true) -> void:
+	var dict := get_query_dict()
+	dict.merge(new_query, overwrite)
+	set_query(dict)
 
 ## Returns a param value if it exists in the query.
 func find_query_param(param: String) -> String:
 	get_query_array()
 	var key := param + "="
-	for p in _parsed_query:
+	for p in _query_array:
 		if p.begins_with(key):
 			return p.substr(key.length())
 	return ""
