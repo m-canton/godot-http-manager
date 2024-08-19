@@ -53,14 +53,14 @@ func get_query_dict() -> Dictionary:
 		if p.is_empty(): continue
 		var pp := p.split("=")
 		if pp[0].is_empty(): continue
-		dict[pp[0]] = null if pp.size() == 1 else pp[1]
+		dict[pp[0]] = null if pp.size() == 1 else pp[1].uri_decode()
 	return dict
 
 ## Joins query param to the end. This method does not check if this param
 ## exists. See [method merge_query] for more control.
 func query_param_join(param: String, value) -> void:
 	if _query != "": _query += "&"
-	var p := str(param, "&", value)
+	var p := param + "=" + str(value).uri_encode()
 	_query += p
 	if not _query_changed: _query_array.append(p)
 
@@ -73,7 +73,7 @@ func set_query(new_query) -> void:
 	elif new_query is Dictionary:
 		var s := ""
 		for key in new_query:
-			s += str("&", key, "=", new_query[key])
+			s += "&" + key + "=" + str(new_query[key].uri_encode())
 		_query = s.substr(1)
 	else:
 		push_error("'new_query' type cannot be parsed.")
@@ -87,12 +87,13 @@ func merge_query(new_query: Dictionary, overwrite := true) -> void:
 	set_query(dict)
 
 ## Returns a param value if it exists in the query.
-func find_query_param(param: String) -> String:
+func find_query_param(param: String, decode := true) -> String:
 	get_query_array()
 	var key := param + "="
 	for p in _query_array:
 		if p.begins_with(key):
-			return p.substr(key.length())
+			var value = p.substr(key.length())
+			return value.uri_decode() if decode else value
 	return ""
 
 ## Prints URL parts.

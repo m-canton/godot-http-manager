@@ -3,9 +3,11 @@ class_name OAuth2 extends Node
 
 ## OAuth 2.0 Local Redirect.
 ## 
-## It starts local TCP server to handle a OAuth 2.0 redirect URI.
+## It starts local TCP server to handle a OAuth 2.0 redirect URI. It can
+## generate random state and PKCE code verifier.
 ## 
 ## @tutorial(OAuth 2.0): https://datatracker.ietf.org/doc/html/rfc6749
+## @tutorial(RFC 7636): https://datatracker.ietf.org/doc/html/rfc7636
 
 ## Setting name for default local server bind address.
 const SETTING_NAME_BIND_ADDRESS := "addons/http_manager/auth/bind_address"
@@ -29,7 +31,7 @@ var _redirect_html := ""
 ## Server duration.
 var _duration := 120.0
 ## PKCE.
-var _pkce: OAuth2PKCE
+var _pkce := {}
 ## State.
 var _state := ""
 ## Current time. See [member duration].
@@ -90,35 +92,54 @@ func set_default_redirect_html() -> OAuth2:
 	
 	return self
 
-## Sets PKCE handler.
-## @experimental
-func set_pkce(code_key: String, code_length := 43, method := OAuth2PKCE.Method.S256) -> OAuth2:
-	push_error("Not implemented.")
+## Enables PKCE and adds code_challenge as URL query param. [param method] must
+## be [code]"plain"[/code] or [code]"S256"[/code].
+func set_pkce(length := 43, method := "S256", params := {}) -> OAuth2:
+	length = clamp(length, 43, 128)
+	var code_verifier := OAuth2.generate_state(length)
+	var code_challenge := code_verifier if method == "plain" else Marshalls.utf8_to_base64(code_verifier.sha256_text())
+	if method != "plain": method = "S256" 
+	_pkce = {
+		code_verifier_param = params.get("code_verifier", "code_verifier"),
+		code_verifier = code_verifier,
+	}
+	request.parsed_url.query_param_join(params.get("code_challenge", "code_challenge"), code_challenge)
+	request.parsed_url.query_param_join(params.get("code_challenge_method", "code_challenge_method"), method)
 	return self
 
-## Sets random state. Minimum length is 32.
-func set_state(length := 100, param := "state") -> OAuth2:
-	length = max(length, 32)
-	_state = OAuth2.generate_state(length)
-	request.parsed_url.query_param_join(param, _state)
-	return self
-
-## Sets redirect URI.
+## Sets redirect URI. If [param param] is not empty, it is added as URL query
+## param too.
 func set_redirect_uri(new_uri: String, param := "redirect_uri") -> OAuth2:
 	_parsed_redirect_uri = HTTPManagerClient.parse_url(new_uri)
 	if param != "":
 		request.parsed_url.query_param_join(param, new_uri)
 	return self
-#endregion
-
-func get_state() -> String:
-	return _state
 
 ## Enables local server using [member _parsed_redirect_uri]. See 
 ## [method set_redirect_uri].
 func set_server(enabled := true) -> OAuth2:
 	_redirect_server = TCPServer.new() if enabled else null
 	return self
+
+## Sets random state. Minimum length is 32. It is added as URL query param.
+func set_state(length := 100, param := "state") -> OAuth2:
+	length = max(length, 32)
+	_state = OAuth2.generate_state(length)
+	request.parsed_url.query_param_join(param, _state)
+	return self
+#endregion
+
+## Returns state if [method set_state] was called.
+func get_state() -> String:
+	return _state
+
+## Returns code verifier if [method set_pkce] was called.
+func get_code_verifier() -> String:
+	return _pkce.code_verifier if _pkce else ""
+
+## Returns code challenge if [method set_pkce] was called.
+func get_code_challenge() -> String:
+	return _pkce.code_challenge if _pkce else ""
 
 ## Starts the OAuth 2.0. Frees other [OAuth2].
 func start(on_complete: Callable) -> Error:
@@ -168,17 +189,3 @@ static func generate_state(length := 100) -> String:
 		s += UNRESERVED_CHARACTERS[randi_range(0, 65)]
 		i += 1
 	return s
-
-## Returns a [OAuth2PKCE] object with random code verifier and code challenge.
-static func generate_pkce(length := 43, method := OAuth2PKCE.Method.S256) -> OAuth2PKCE:
-	var pkce := OAuth2PKCE.new()
-	pkce.random()
-	return pkce
-
-## Returns default bind address.
-static func get_default_bind_address() -> String:
-	return ProjectSettings.get_setting(SETTING_NAME_BIND_ADDRESS, DEFAULT_BIND_ADDRESS)
-
-## Returns default port.
-static func get_default_port() -> int:
-	return ProjectSettings.get_setting(SETTING_NAME_PORT, DEFAULT_PORT)
