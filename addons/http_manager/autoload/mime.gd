@@ -52,6 +52,20 @@ static func type_to_string(type: Type, attributes := {}) -> String:
 				return s
 	return ""
 
+## Returns Accept header.
+static func type_to_accept(mime: MIME.Type, attributes := {}) -> String:
+	var s := MIME.type_to_string(mime, attributes)
+	if s.is_empty():
+		return s
+	return "Accept: " + s
+
+## Returns Content-Type header.
+static func type_to_content_type(mime: MIME.Type, attributes := {}) -> String:
+	var s := MIME.type_to_string(mime, attributes)
+	if s.is_empty():
+		return s
+	return "Content-Type: " + s
+
 ## Returns MIME type from [String].
 static func string_to_type(mimetype: String) -> Type:
 	var i := mimetype.find(";")
@@ -76,22 +90,6 @@ static func get_attributes(mimetype: String) -> Dictionary:
 			push_warning("Invalid attribute: ", part)
 	return attributes
 
-## Returns Accept header.
-static func type_to_accept(mime: MIME.Type, attributes := {}) -> String:
-	var s := MIME.type_to_string(mime, attributes)
-	if s.is_empty():
-		return s
-	return "Accept: " + s
-
-## Returns Content-Type header.
-static func type_to_content_type(mime: MIME.Type, attributes := {}) -> String:
-	var s := MIME.type_to_string(mime, attributes)
-	if s.is_empty():
-		return s
-	return "Content-Type: " + s
-#endregion
-
-#region Buffer
 ## Converts buffer to variant.
 static func buffer_to_var(buffer: PackedByteArray, type := Type.NONE, _attributes := {}) -> Variant:
 	if type == Type.JSON:
@@ -107,6 +105,17 @@ static func buffer_to_var(buffer: PackedByteArray, type := Type.NONE, _attribute
 	if type == Type.WEBP:
 		var image := Image.new()
 		return image if image.load_webp_from_buffer(buffer) == OK else null
+	push_warning("Type not supported.")
+	return []
+
+## Converts string to variant.
+static func string_to_var(s: String, type := Type.NONE, _attributes := {}) -> Variant:
+	if type == Type.JSON:
+		return JSON.parse_string(s)
+	if type in [Type.HTML, Type.TEXT]:
+		return s
+	if type in [Type.JPG, Type.PNG, Type.WEBP]:
+		return buffer_to_var(Marshalls.base64_to_raw(s))
 	push_warning("Type not supported.")
 	return []
 
@@ -145,6 +154,8 @@ static func var_to_string(value, type := Type.NONE, attributes := {}) -> String:
 		return Marshalls.raw_to_base64(value if value is PackedByteArray else var_to_buffer(value, type, attributes))
 	elif value is String:
 		return value
+	elif value == null:
+		return ""
 	else:
-		push_warning("This variant cannot be converted to a string.")
+		push_warning("This variant cannot be converted to a string.", value)
 	return ""

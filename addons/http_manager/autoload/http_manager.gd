@@ -104,9 +104,13 @@ func cancel_all(c: HTTPManagerClient) -> void:
 #region Start Requests
 ## Starts a download.
 ## @experimental
-func download(d: HTTPManagerDownload) -> Error:
-	if not d:
-		push_error("Download is null.")
+func download(d) -> Error:
+	if d is HTTPManagerDownload:
+		pass
+	elif d is String:
+		pass
+	else:
+		push_error("Invalid download: ", d)
 		return FAILED
 	
 	push_error("Not implemented.")
@@ -169,7 +173,9 @@ func _next(c: HTTPManagerClient) -> Error:
 		return error
 	
 	hc.set_meta(META_REQUEST, r)
-	hc.set_meta(META_RESPONSE, HTTPManagerResponse.new())
+	var response := HTTPManagerResponse.new()
+	response.body = PackedByteArray()
+	hc.set_meta(META_RESPONSE, response)
 	_http_clients.append(hc)
 	if not c in _clients:
 		_clients.append(c)

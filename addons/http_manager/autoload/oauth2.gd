@@ -67,7 +67,7 @@ func _process(delta: float) -> void:
 			_redirect_html = HTMLDocument.create_default().text
 		connection.put_data(_redirect_html.to_ascii_buffer())
 		
-		if _handle_request(crequest):
+		if _handle_code_request(crequest):
 			if _error != "":
 				if not _on_complete_callable.is_null():
 					var response := HTTPManagerResponse.new()
@@ -169,8 +169,9 @@ func start_with_server(options := {}) -> Error:
 	
 	return start(options)
 
-## Handles request string received on local server.
-func _handle_request(request_string: String) -> bool:
+## Handles request string received on local server. Returns [code]true[/code]
+## if this is the expected code request and starts requesting access token.
+func _handle_code_request(request_string: String) -> bool:
 	# Check if it is valid request.
 	var r := HTTPManagerRequest.parse_string(request_string)
 	if not r: return false

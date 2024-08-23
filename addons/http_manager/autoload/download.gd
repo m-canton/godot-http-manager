@@ -27,3 +27,9 @@ func start() -> Error:
 	HTTPManagerRequest.http_manager.download(self)
 	
 	return OK
+
+
+static func create_from_url(u: String) -> HTTPManagerDownload:
+	var d := HTTPManagerDownload.new()
+	d.url = u
+	return d
