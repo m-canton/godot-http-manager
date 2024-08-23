@@ -23,12 +23,14 @@ var cache := false
 ## It does nothing for now.
 var priority := 0
 ## It indicates if it is valid.
-var valid := false
+var valid := true
 ## On complete listeners. See [HTTPManagerRequest.Listener].
 var _listeners = {}
 ## Used to add Authorization header.
+## @experimental
 var _client_data: HTTPManagerClientData
 ## Used to add Authorization header.
+## @experimental
 var _auth_type: HTTPManagerRoute.AuthType
 
 ## Starts the download and set on complete listeners.
@@ -60,7 +62,8 @@ func add_header(h: String) -> HTTPManagerDownload:
 	headers.append(h)
 	return self
 
-## Sets authorization.
+## Sets authorization. It does nothing for now.
+## @experimental
 func set_auth(client_data: HTTPManagerClientData, auth_type: HTTPManagerRoute.AuthType) -> HTTPManagerDownload:
 	if auth_type in [HTTPManagerRoute.AuthType.OAUTH2_CHECK, HTTPManagerRoute.AuthType.API_KEY_CHECK]:
 		_client_data = client_data

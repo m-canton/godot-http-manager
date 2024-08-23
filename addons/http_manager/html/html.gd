@@ -73,8 +73,7 @@ static func type_content_from_html(label: RichTextLabel, html: String, clear := 
 						var image := Image.create(1, 1, true, Image.FORMAT_ASTC_4x4)
 						var texture := ImageTexture.create_from_image(image)
 						label.add_image(texture, 0, 0, Color.WHITE, INLINE_ALIGNMENT_CENTER, Rect2(), ikey)
-						HTTPManagerDownload.create_from_url(attributes.get("src", "")).
-						HTTPManager.download()
+						HTTPManagerDownload.create_from_url(attributes.get("src", "")).start(HTML.update_label_image_from_response.bind(label, ikey))
 						print("+Img: ", attributes)
 					"br":
 						label.newline()
@@ -100,4 +99,5 @@ static func type_content_from_html(label: RichTextLabel, html: String, clear := 
 
 ## Updates [RichTextLabel] image from response.
 static func update_label_image_from_response(response: HTTPManagerResponse, label: RichTextLabel, key: int) -> void:
-	label.update_image(key, RichTextLabel.ImageUpdateMask.UPDATE_TEXTURE, ImageTexture.create_from_image(response.parse()))
+	var image = response.parse()
+	label.update_image(key, RichTextLabel.ImageUpdateMask.UPDATE_TEXTURE, ImageTexture.create_from_image(image))

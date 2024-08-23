@@ -242,6 +242,7 @@ func download(d: HTTPManagerDownload) -> Error:
 		push_error("Invalid download: ", d.url)
 		return FAILED
 	
+	_downloads.append(d)
 	_next_download()
 	return OK
 
