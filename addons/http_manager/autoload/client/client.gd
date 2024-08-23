@@ -57,6 +57,7 @@ static var _url_regex: RegEx
 ## @experimental
 @export var priority := 0
 
+## Client data to store cache references and auth credentials.
 @export var data: HTTPManagerClientData
 
 @export_group("URL Params", "url_param_")
@@ -83,6 +84,7 @@ func process(delta: float) -> bool:
 			return c.process(delta) and not _queue.is_empty()
 	return false
 
+## Removes a request from queue.
 func cancel_request(r: HTTPManagerRequest) -> bool:
 	var i := _queue.find(r)
 	if i == -1: return false
@@ -140,7 +142,11 @@ func _current_constraints() -> Array[HTTPManagerConstraint]:
 		return []
 	return constraint_sets[constraint_current_set].constraints
 
-## Returns a parsed query [Dictionary] as [String].
+## Returns [member base_url] as [HTTPManagerClientParsedUrl].
+func parse_base_url() -> HTTPManagerClientParsedUrl:
+	return HTTPManagerClient.parse_url(base_url)
+
+## Returns a query [Dictionary] as [String].
 func query_string_from_dict(query: Dictionary) -> String:
 	var s := ""
 	for key in query:
@@ -184,28 +190,9 @@ func query_string_from_dict(query: Dictionary) -> String:
 	
 	return s.substr(1)
 
-func parse_base_url() -> HTTPManagerClientParsedUrl:
-	return HTTPManagerClient.parse_url(base_url)
-
 ## Returns clients dir from project settings.
 static func get_clients_dir() -> String:
 	return ProjectSettings.get_setting(SETTING_NAME_DIR, DEFAULT_DIR)
-
-## Returns client file if it exists.
-static func get_client_file(subpath: String) -> ConfigFile:
-	var cf := ConfigFile.new()
-	var path := get_clients_dir().path_join(subpath).path_join(CLIENT_FILENAME)
-	var error := cf.load(path)
-	cf.set_meta(&"error", error)
-	cf.set_meta(&"path", path)
-	return cf
-
-static func save_client_file(file: ConfigFile) -> Error:
-	var path: String = file.get_meta(&"path", "")
-	if path.is_empty():
-		push_error("'path' is empty.")
-		return FAILED
-	return file.save(path)
 
 ## Returns URL parts. See [enum ParsedUrl]
 static func parse_url(url: String) -> HTTPManagerClientParsedUrl:

@@ -32,12 +32,15 @@ static func attributes_from_style_string(style: String) -> Dictionary:
 	return dict
 
 ## Parses HTML code to type in [RichTextLabel].
-static func type_content_from_html(label: RichTextLabel, html: String) -> Error:
+static func type_content_from_html(label: RichTextLabel, html: String, clear := true) -> Error:
 	var parser := XMLParser.new()
 	var error := parser.open_buffer(html.to_utf8_buffer())
 	if error:
 		push_error(error_string(error))
 		return error
+	
+	if clear:
+		label.clear()
 	
 	var open_tags := PackedStringArray()
 	while parser.read() != ERR_FILE_EOF:
@@ -70,7 +73,8 @@ static func type_content_from_html(label: RichTextLabel, html: String) -> Error:
 						var image := Image.create(1, 1, true, Image.FORMAT_ASTC_4x4)
 						var texture := ImageTexture.create_from_image(image)
 						label.add_image(texture, 0, 0, Color.WHITE, INLINE_ALIGNMENT_CENTER, Rect2(), ikey)
-						HTTPManager.download(attributes.get("src", ""))
+						HTTPManagerDownload.create_from_url(attributes.get("src", "")).
+						HTTPManager.download()
 						print("+Img: ", attributes)
 					"br":
 						label.newline()

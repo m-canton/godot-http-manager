@@ -6,6 +6,7 @@ func _enter_tree() -> void:
 	add_autoload_singleton("HTTPManager", "res://addons/http_manager/autoload/http_manager.gd")
 	
 	# Settings
+	_set_setting(HTTPManagerDownload.SETTING_NAME_MAX_CONCURRENT_DOWNLOADS, HTTPManagerDownload.MAX_CONCURRENT_DOWNLOADS)
 	_set_setting(HTTPManagerClient.SETTING_NAME_DIR, HTTPManagerClient.DEFAULT_DIR)
 	_set_setting(OAuth2.SETTING_NAME_BIND_ADDRESS, OAuth2.DEFAULT_BIND_ADDRESS)
 	_set_setting(OAuth2.SETTING_NAME_PORT, OAuth2.DEFAULT_PORT)

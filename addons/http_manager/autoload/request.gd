@@ -10,11 +10,6 @@ static var http_manager: Node
 ## restrictions. Use [method create_from_route] to create a instance because
 ## it adds the client and route headers to this and sets the route for you.
 
-enum Mode {
-	DEFAULT,
-	FETCH,
-}
-
 enum Listener {
 	COMPLETE,
 	SUCCESS,
@@ -27,17 +22,14 @@ var route: HTTPManagerRoute
 var priority := -1
 ## Headers.
 var headers := PackedStringArray()
-## Authentication.
-var use_auth := false
 ## Body.
 var _body = null
 ## Body MIME type.
 var _body_type := MIME.Type.NONE
 ## Body MIME type attributes. Example: [code]{"charset": "UFT-8"}[/code].
 var _body_attributes := {}
-## Mode.
-var mode := Mode.DEFAULT
-## Indicates if this request is valid.
+## Indicates if this request is valid. This prevents null objects in chain
+## methods. It will return an error when starting the request.
 var valid := true
 ## Parsed URL.
 var parsed_url: HTTPManagerClientParsedUrl
@@ -116,7 +108,6 @@ func set_diggest_auth(_username: String, _password: String) -> HTTPManagerReques
 ## Adds Authorization header.
 func _set_auth(type_credentials_string: String) -> void:
 	headers.append("Authorization: " + type_credentials_string)
-	use_auth = true
 #endregion
 
 #region Chain Methods
@@ -231,21 +222,7 @@ func start(listeners = null) -> Error:
 		push_error("HTTPManager is disabled.")
 		return FAILED
 	
-	if listeners is Callable:
-		set_meta(&"listeners", {
-			Listener.COMPLETE: listeners,
-		})
-	elif listeners is Array:
-		var dict := {}
-		var ls: int = listeners.size()
-		if ls > 0:
-			if listeners[0] is Callable:
-				dict[Listener.SUCCESS] = listeners[0]
-		if ls > 1:
-			if listeners[1] is Callable:
-				dict[Listener.FAILURE] = listeners[1]
-	elif listeners is Dictionary:
-		set_meta(&"listeners", listeners)
+	set_meta(&"listeners", create_listeners_dict(listeners))
 	
 	if not valid:
 		var response := HTTPManagerResponse.new()
@@ -334,3 +311,24 @@ static func parse_string(text: String) -> HTTPManagerRequest:
 		r.add_header(line)
 	
 	return r
+
+## Used by [HTTPManagerRequest] and [HTTPManagerDownload] to set on complete
+## listeners.
+## @experimental
+static func create_listeners_dict(listeners) -> Dictionary:
+	var dict := {}
+	if listeners is Callable:
+		dict[Listener.COMPLETE] = listeners
+	elif listeners is Array:
+		listeners.resize(2)
+		if listeners[0] is Callable:
+			dict[Listener.SUCCESS] = listeners[0]
+		if listeners[1] is Callable:
+			dict[Listener.FAILURE] = listeners[1]
+	elif listeners is Dictionary:
+		dict = listeners
+	elif listeners == null:
+		pass
+	else:
+		push_warning("Invalid 'listeners' type.")
+	return dict

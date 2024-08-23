@@ -23,12 +23,13 @@ const META_REDIRECTS := &"redirects"
 
 ## Active [HTTPManagerClient]. If a contraint is processing, client continues
 ## active.
-var _clients: Array[HTTPManagerClient] = []
+var _clients: Array[HTTPManagerClient]
 ## Active [HTTPClient]s.
-var _http_clients: Array[HTTPClient] = []
+var _http_clients: Array[HTTPClient]
 
 
 func _ready() -> void:
+	process_mode = PROCESS_MODE_ALWAYS
 	set_process(false)
 	HTTPManagerRequest.http_manager = self
 
@@ -102,21 +103,6 @@ func cancel_all(c: HTTPManagerClient) -> void:
 #endregion
 
 #region Start Requests
-## Starts a download.
-## @experimental
-func download(d) -> Error:
-	if d is HTTPManagerDownload:
-		pass
-	elif d is String:
-		pass
-	else:
-		push_error("Invalid download: ", d)
-		return FAILED
-	
-	push_error("Not implemented.")
-	
-	return OK
-
 ## Do not call this method. Use [method HTTPManagerRequest.start] instead.
 ## @experimental
 func request(r: HTTPManagerRequest) -> Error:
@@ -199,7 +185,6 @@ func _on_failure(http_client: HTTPClient) -> void:
 ## Called on request success.
 func _on_success(http_client: HTTPClient) -> void:
 	var r: HTTPManagerRequest = http_client.get_meta(META_REQUEST)
-	var redirects: int = http_client.get_meta(META_REDIRECTS, 0)
 	
 	var response: HTTPManagerResponse = http_client.get_meta(META_RESPONSE)
 	response.code = http_client.get_response_code() as HTTPClient.ResponseCode
@@ -207,6 +192,7 @@ func _on_success(http_client: HTTPClient) -> void:
 	response.successful = true
 	
 	if response.code in [HTTPClient.RESPONSE_MOVED_PERMANENTLY, HTTPClient.RESPONSE_FOUND]:
+		var redirects: int = http_client.get_meta(META_REDIRECTS, 0)
 		if redirects >= r.route.client.max_redirects:
 			push_warning("Max redirects reached.")
 			response.successful = false
@@ -236,3 +222,67 @@ func _on_success(http_client: HTTPClient) -> void:
 	_http_clients.erase(http_client)
 	r.complete(response)
 	_next(r.route.client)
+
+#region Downloads
+## [HTTPManagerDownload] queue.
+var _downloads: Array[HTTPManagerDownload]
+## [HTTPRequest]s to download files.
+var _active_downloads := 0
+## Max concurrent downloads from project settings.
+var _max_concurrent_downloads := HTTPManagerDownload.get_max_concurrent_downloads()
+
+## Starts a download.
+## @experimental
+func download(d: HTTPManagerDownload) -> Error:
+	if not HTTPManagerDownload:
+		push_error("Download is null.")
+		return FAILED
+	
+	if not d.valid:
+		push_error("Invalid download: ", d.url)
+		return FAILED
+	
+	_next_download()
+	return OK
+
+func _next_download(hr: HTTPRequest = null) -> void:
+	if _active_downloads >= _max_concurrent_downloads:
+		return
+	
+	var d: HTTPManagerDownload = _downloads.pop_front()
+	if not d:
+		if hr: hr.queue_free()
+		return
+	
+	if not hr:
+		hr = HTTPRequest.new()
+		hr.request_completed.connect(_on_download_completed.bind(hr.get_instance_id()))
+		add_child(hr)
+	
+	var error := hr.request(d.url)
+	if error:
+		var response := HTTPManagerResponse.new()
+		response.body = "Request Error: " + error_string(error)
+		response.headers.append(MIME.type_to_content_type(MIME.Type.TEXT))
+		response.successful = false
+		d.complete(response)
+		_next_download(hr)
+	else:
+		hr.set_meta(&"download", d)
+		_active_downloads += 1
+
+## Called on download completed.
+func _on_download_completed(_result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray, hrid: int) -> void:
+	var response := HTTPManagerResponse.new()
+	response.successful = true
+	response.code = response_code
+	response.headers = headers
+	response.body = body
+	
+	var hr: HTTPRequest = instance_from_id(hrid)
+	var d: HTTPManagerDownload = hr.get_meta(&"download")
+	d.complete(response)
+	
+	_active_downloads -= 1
+	_next_download(hr)
+#endregion

@@ -49,7 +49,7 @@ var _on_complete_callable: Callable
 ## Error.
 var _error := ""
 
-
+## Calls [method Node.queue_free] on code received or timeout.
 func _process(delta: float) -> void:
 	_time += delta
 	if _time >= _timeout:
