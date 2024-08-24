@@ -152,8 +152,7 @@ func _next(c: HTTPManagerClient) -> Error:
 	
 	var hc := HTTPClient.new()
 	var error := hc.connect_to_host(r.parsed_url.get_host(),
-			r.parsed_url.port,
-			r.tls_options)
+			r.parsed_url.port, r.tls_options)
 	if error:
 		push_error(error_string(error))
 		return error
@@ -224,6 +223,10 @@ func _on_success(http_client: HTTPClient) -> void:
 	_next(r.route.client)
 
 #region Downloads
+## Downloads file to reference cache.
+const DOWNLOADS_FILE_PATH := "user://addons/http_manager/downloads.ini"
+
+var _downloads_file: ConfigFile
 ## [HTTPManagerDownload] queue.
 var _downloads: Array[HTTPManagerDownload]
 ## [HTTPRequest]s to download files.
@@ -245,6 +248,9 @@ func download(d: HTTPManagerDownload) -> Error:
 	_downloads.append(d)
 	_next_download()
 	return OK
+
+func _ensure_downloads_file() -> Error:
+	return FAILED
 
 func _next_download(hr: HTTPRequest = null) -> void:
 	if _active_downloads >= _max_concurrent_downloads:

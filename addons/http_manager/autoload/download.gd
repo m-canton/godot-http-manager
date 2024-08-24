@@ -24,6 +24,8 @@ var cache := false
 var priority := 0
 ## It indicates if it is valid.
 var valid := true
+## Content encoding.
+var content_encoding := PackedStringArray()
 ## On complete listeners. See [HTTPManagerRequest.Listener].
 var _listeners = {}
 ## Used to add Authorization header.
@@ -62,6 +64,18 @@ func add_header(h: String) -> HTTPManagerDownload:
 	headers.append(h)
 	return self
 
+## Requests content encoding gzip.
+func set_gzip() -> HTTPManagerDownload:
+	if not content_encoding.has("gzip"):
+		content_encoding.append("gzip")
+	return self
+
+## Requests content encoding deflate.
+func set_deflate() -> HTTPManagerDownload:
+	if not content_encoding.has("deflate"):
+		content_encoding.append("deflate")
+	return self
+
 ## Sets authorization. It does nothing for now.
 ## @experimental
 func set_auth(client_data: HTTPManagerClientData, auth_type: HTTPManagerRoute.AuthType) -> HTTPManagerDownload:
@@ -81,3 +95,12 @@ static func create_from_url(new_url: String) -> HTTPManagerDownload:
 ## Returns max concurrent downloads.
 static func get_max_concurrent_downloads() -> int:
 	return ProjectSettings.get_setting(SETTING_NAME_MAX_CONCURRENT_DOWNLOADS, MAX_CONCURRENT_DOWNLOADS)
+
+## Scales down an image to fit the specified size.
+static func image_scale_down(image: Image, max_length: int) -> void:
+	var isize := image.get_size()
+	if isize.x > isize.y:
+		if isize.x > max_length:
+			image.resize(max_length, int(max_length / isize.aspect()))
+	elif isize.y > max_length:
+		image.resize(int(max_length * isize.aspect()), max_length)

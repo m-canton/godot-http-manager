@@ -27,6 +27,11 @@ enum Method {
 	PATCH,
 }
 
+enum Encoding {
+	GZIP,
+	DEFLATE,
+}
+
 ## Client that uses this route.
 @export var client: HTTPManagerClient
 ## URI pattern. It must start with [code]/[/code]. You can set url param with
@@ -37,9 +42,11 @@ enum Method {
 ## Route description or notes.
 @export_multiline var description := ""
 ## Default headers for this route.
-@export var headers: PackedStringArray = []
+@export var headers: PackedStringArray
 ## Method for this route.
 @export var method := Method.GET
+## Accept-Encoding header.
+@export var encodings: Array[Encoding]
 ## Request priority. Lower values are first in the client queue.
 @export var priority := 0
 
@@ -82,6 +89,20 @@ func create_request(url_params := {}) -> HTTPManagerRequest:
 	for h in client.headers:
 		if not h in r.headers:
 			r.headers.append(h)
+	
+	# Accept-Encoding header
+	var encoding_strings: PackedStringArray
+	for e in encodings:
+		if e == Encoding.GZIP:
+			if not encoding_strings.has("gzip"):
+				encoding_strings.append("gzip")
+		elif e == Encoding.DEFLATE:
+			if not encoding_strings.has("deflate"):
+				encoding_strings.append("deflate")
+		else:
+			continue
+	if encoding_strings:
+		r.add_header("Accept-Encoding: " + ", ".join(encoding_strings))
 	
 	if r.set_url_params(url_params):
 		push_warning("Invalid request. Invalid url params.")

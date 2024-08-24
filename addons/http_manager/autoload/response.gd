@@ -11,16 +11,42 @@ func parse(mimetype := MIME.Type.NONE, attributes := {}) -> Variant:
 	if mimetype != MIME.Type.NONE:
 		return _parse_body(mimetype, attributes)
 	
+	var ct := get_header("Content-Type")
+	if ct == "": return null
+	return _parse_body(MIME.string_to_type(ct), MIME.get_attributes(ct))
+
+## Returns header value. Empty if it does not exist.
+func get_header(header_name: String) -> String:
+	header_name += ":"
 	for h in headers:
-		if h.begins_with("Content-Type:"):
-			var ts := h.substr(13).strip_edges()
-			return _parse_body(MIME.string_to_type(ts), MIME.get_attributes(ts))
-	
-	return null
+		if h.begins_with(header_name):
+			return h.substr(header_name.length()).strip_edges()
+	return ""
+
+func erase_header(header_name: String) -> void:
+	for i in range(headers.size()):
+		if headers[i].begins_with(header_name):
+			headers.remove_at(i)
+			return
 
 ## Handles body type to use the right [MIME] method.
 func _parse_body(mimetype: MIME.Type, attributes := {}) -> Variant:
 	if body is PackedByteArray:
+		var ce := get_header("Content-Encoding")
+		if ce != "":
+			for e in ce.split(",", false):
+				e = e.strip_edges()
+				if e == "gzip":
+					print("Content-Encoding: gzip")
+					body = body.decompress_dynamic(-1, FileAccess.COMPRESSION_GZIP)
+				elif e == "deflate":
+					print("Content-Encoding: deflate")
+					body = body.decompress_dynamic(-1, FileAccess.COMPRESSION_DEFLATE)
+				else:
+					push_error("Invalid Content-Encoding: ", e)
+					return null
+			erase_header("Content-Encoding")
+			
 		return MIME.buffer_to_var(body, mimetype, attributes)
 	
 	if body is String:

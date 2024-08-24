@@ -21,7 +21,7 @@ var route: HTTPManagerRoute
 ## Overrides route priority. See [HTTPManagerRoute.priority].
 var priority := -1
 ## Headers.
-var headers := PackedStringArray()
+var headers: PackedStringArray
 ## Body.
 var _body = null
 ## Body MIME type.
@@ -91,13 +91,11 @@ func _get_urlencoded_body_string() -> String:
 #region Authorization
 ## Adds Basic Authentication header.
 func set_basic_auth(username: String, password := "") -> HTTPManagerRequest:
-	_set_auth("Basic " + Marshalls.utf8_to_base64(username + ":" + password))
-	return self
+	return _set_auth("Basic " + Marshalls.utf8_to_base64(username + ":" + password))
 
 ## Adds Bearer Authentication header.
 func set_bearer_auth(token: String) -> HTTPManagerRequest:
-	_set_auth("Bearer " + token)
-	return self
+	return _set_auth("Bearer " + token)
 
 ## Adds Basic Authentication header. Not implementet yet.
 ## @experimental
@@ -106,8 +104,9 @@ func set_diggest_auth(_username: String, _password: String) -> HTTPManagerReques
 	return self
 
 ## Adds Authorization header.
-func _set_auth(type_credentials_string: String) -> void:
-	headers.append("Authorization: " + type_credentials_string)
+func _set_auth(auth_value: String) -> HTTPManagerRequest:
+	add_header("Authorization: " + auth_value)
+	return self
 #endregion
 
 #region Chain Methods
@@ -222,7 +221,8 @@ func start(listeners = null) -> Error:
 		push_error("HTTPManager is disabled.")
 		return FAILED
 	
-	set_meta(&"listeners", create_listeners_dict(listeners))
+	if listeners != null:
+		set_meta(&"listeners", create_listeners_dict(listeners))
 	
 	if not valid:
 		var response := HTTPManagerResponse.new()

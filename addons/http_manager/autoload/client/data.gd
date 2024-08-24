@@ -96,7 +96,22 @@ func save_oauth2_token_from_response(response: HTTPManagerResponse) -> Error:
 ## Saves the file.
 func save() -> Error:
 	if not _ensure_file(): return _load_error
-	return _file.save(_file_path)
+	
+	var error := OK
+	
+	if _load_error == ERR_FILE_NOT_FOUND:
+		if not DirAccess.dir_exists_absolute(_dir_path):
+			error = DirAccess.make_dir_recursive_absolute(_dir_path)
+			if error:
+				push_error(error_string(error))
+				return error
+	
+	error = _file.save(_file_path)
+	if error:
+		push_error(error_string(error))
+	else:
+		_load_error = OK
+	return error
 
 ## Ensures [member _file] exists.
 func _ensure_file() -> bool:

@@ -45,7 +45,7 @@ static var _url_regex: RegEx
 ## Client description or notes.
 @export_multiline var description := ""
 ## Headers that are added when request starts with this client.
-@export var headers: PackedStringArray = []
+@export var headers: PackedStringArray
 ## Maximum concurrent requests.
 @export_range(0, 10, 1, "or_greater") var max_redirects := 3
 ## Maximum concurrent requests.
