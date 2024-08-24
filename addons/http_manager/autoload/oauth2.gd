@@ -3,8 +3,9 @@ class_name OAuth2 extends Node
 
 ## OAuth 2.0 Local Redirect.
 ## 
-## It starts local TCP server to handle a OAuth 2.0 redirect URI. It can
-## generate random state and PKCE code verifier.
+## It starts local TCP server to handle a OAuth 2.0 redirect URI. Intended for personal
+## tools for all those who like Godot.[br]
+## It can generate random state and PKCE code verifier.
 ## 
 ## @tutorial(OAuth 2.0): https://datatracker.ietf.org/doc/html/rfc6749
 ## @tutorial(RFC 7636): https://datatracker.ietf.org/doc/html/rfc7636
@@ -53,7 +54,7 @@ var _error := ""
 func _process(delta: float) -> void:
 	_time += delta
 	if _time >= _timeout:
-		push_warning("OAuth 2.0 Timeout")
+		push_warning("OAuth 2.0 Timeout. No code received.")
 		var response := HTTPManagerResponse.new()
 		response.successful = false
 		request.complete(response)
@@ -78,7 +79,8 @@ func _process(delta: float) -> void:
 #region Chain Methods
 ## Enables PKCE and adds code_challenge as URL query param. [param method] must
 ## be [code]"plain"[/code] or [code]"S256"[/code]. Changes code_challenge,
-## code_challenge_method and code_verifier param names using [param params].
+## code_challenge_method and code_verifier param names using [param params].[br]
+## [b]Note:[/b] Max length is 128.
 func set_pkce(length := 43, method := "S256") -> OAuth2:
 	length = clamp(length, 43, 128)
 	var code_verifier := OAuth2.generate_state(length)
@@ -90,16 +92,15 @@ func set_pkce(length := 43, method := "S256") -> OAuth2:
 	return self
 
 ## Sets random state. Minimum length is 32. It is added as URL query param.
-func set_state(length := 100, param := "state") -> OAuth2:
+func set_state(length := 100) -> OAuth2:
 	length = max(length, 32)
 	_state = OAuth2.generate_state(length)
-	request.parsed_url.query_param_join(param, _state)
+	request.parsed_url.query_param_join("state", _state)
 	return self
 #endregion
 
 ## Starts the OAuth 2.0. Frees other [OAuth2].
-## @experimental
-func start(options := {}) -> Error:
+func _start(options := {}) -> Error:
 	if not HTTPManagerRequest.http_manager:
 		push_error("HTTPManager is not started.")
 		queue_free()
@@ -152,22 +153,19 @@ func start(options := {}) -> Error:
 	
 	return OK
 
-## Starts the server and request with options: timeout, token_route, html,
-## client_secret, on_complete.[br]
-## Enables local server when timeout is positive and token_route is given.
-## @experimental
-func start_with_server(options := {}) -> Error:
+## Starts the server and request with options: timeout, html,
+## on_complete.[br]
+## Enables local server when timeout is positive.
+func start(options := {}) -> Error:
 	_timeout = options.get("timeout", 60.0)
-	if _timeout <= 0.0:
+	if _timeout < 0.0:
 		push_error("'timeout' must be positive.")
 		return FAILED
 	
 	var html = options.get("html")
 	_redirect_html = html.text if html is HTMLDocument else html if html is String else _redirect_html
 	
-	if options.has("client_secret"): _token_request_body["client_secret"] = options.client_secret
-	
-	return start(options)
+	return _start(options)
 
 ## Handles request string received on local server. Returns [code]true[/code]
 ## if this is the expected code request and starts requesting access token.
@@ -181,20 +179,18 @@ func _handle_code_request(request_string: String) -> bool:
 		if _parsed_redirect_uri.get(p) != r.parsed_url.get(p):
 			return false
 	
-	var dict := r.parsed_url.get_query_dict()
-	
 	# Check state.
-	var state: String = dict.get("state", "")
+	var state: String = r.parsed_url.find_query_param("state")
 	if _state != state:
 		return false
 	
 	# Check if it has error.
-	_error =  dict.get("error", "")
+	_error = r.parsed_url.find_query_param("error")
 	if _error:
 		return true
 	
 	# Check if code is valid.
-	var _code: String = dict.get("code", "")
+	var _code: String = r.parsed_url.find_query_param("code")
 	if _code.is_empty():
 		push_error("Authorization code is empty.")
 		_error = "Authorization code is empty."
@@ -202,9 +198,9 @@ func _handle_code_request(request_string: String) -> bool:
 	
 	_token_request_body["code"] = _code
 	
-	request.route.client.data.auth_route.create_request() \
+	request.route.auth_route.create_request() \
 			.set_body(_token_request_body, MIME.Type.URL_ENCODED) \
-			.start(_on_complete_callable)
+			.start(request.route.client.data.save_oauth2_token_from_response)
 	return true
 
 ## Returns a random state string.

@@ -235,7 +235,6 @@ var _active_downloads := 0
 var _max_concurrent_downloads := HTTPManagerDownload.get_max_concurrent_downloads()
 
 ## Starts a download.
-## @experimental
 func download(d: HTTPManagerDownload) -> Error:
 	if not HTTPManagerDownload:
 		push_error("Download is null.")
@@ -249,9 +248,12 @@ func download(d: HTTPManagerDownload) -> Error:
 	_next_download()
 	return OK
 
+## Ensures downloads file exists.
+## @experimental
 func _ensure_downloads_file() -> Error:
 	return FAILED
 
+## Starts next download if it exists. It can reuse a [HTTPRequest].
 func _next_download(hr: HTTPRequest = null) -> void:
 	if _active_downloads >= _max_concurrent_downloads:
 		return

@@ -44,6 +44,7 @@ func get_query_string() -> String:
 func get_query_array() -> PackedStringArray:
 	if _query_changed:
 		_query_array = _query.split("&", false)
+		_query_changed = false
 	return _query_array
 
 ## Returns query as [Dictionary].

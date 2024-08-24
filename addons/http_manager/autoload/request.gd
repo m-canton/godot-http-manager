@@ -43,14 +43,17 @@ func complete(response: HTTPManagerResponse) -> void:
 	completed.emit(response)
 	var listeners: Dictionary = get_meta(&"listeners", {})
 	for key in listeners:
+		var callable = null
 		if key == Listener.COMPLETE:
-			listeners[key].call(response)
+			callable = listeners[key]
 		elif key == Listener.SUCCESS:
 			if response.successful:
-				listeners[key].call(response)
+				callable = listeners[key]
 		elif key == Listener.FAILURE:
 			if not response.successful:
-				listeners[key].call(response)
+				callable = listeners[key]
+		if callable is Callable and callable.is_valid():
+			callable.call(response)
 
 ## Do not call this method. It saves OAuth 2.0 tokens and starts the pending
 ## request.
