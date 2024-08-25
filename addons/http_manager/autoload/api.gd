@@ -2,14 +2,10 @@ class_name HTTPManagerAPI extends RefCounted
 
 ## HTTPManager API.
 ## 
-## [b]Work in progress.[/b] This class is to extend it and define routes to
-## request them. An alternative to defining clients and routes via gdscript.
+## [b]Work in progress.[/b] This class is to extend it and define requests. An
+## alternative to defining clients and routes via gdscript.
 ## 
 ## @experimental
-
-enum Auth {
-	BEARER,
-}
 
 ## Checks if auth credentials are valid.
 ## @experimental
@@ -29,6 +25,9 @@ func create_route(uri: String) -> HTTPManagerRoute:
 	var r := HTTPManagerRoute.new()
 	r.uri_pattern = uri
 	return r
+
+func _load_route(path: String) -> HTTPManagerRoute:
+	return load(path)
 
 func _auth_type() -> void:
 	pass

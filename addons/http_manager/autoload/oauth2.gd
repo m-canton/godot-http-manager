@@ -286,7 +286,8 @@ static func save_token(file: ConfigFile, response: HTTPManagerResponse) -> Error
 	for key in token_dict:
 		var value = token_dict[key]
 		if key == "expires_in":
-			var t := Time.get_unix_time_from_system()
+			value = int(value)
+			var t := int(Time.get_unix_time_from_system())
 			if value < t:
 				value += t
 		file.set_value("token", key, value)

@@ -11,9 +11,12 @@ func parse(mimetype := MIME.Type.NONE, attributes := {}) -> Variant:
 	if mimetype != MIME.Type.NONE:
 		return _parse_body(mimetype, attributes)
 	
-	var ct := get_header("Content-Type")
+	var ct := get_content_type()
 	if ct == "": return null
 	return _parse_body(MIME.string_to_type(ct), MIME.get_attributes(ct))
+
+func get_content_type() -> String:
+	return get_header("Content-Type")
 
 ## Returns header value. Empty if it does not exist.
 func get_header(header_name: String) -> String:

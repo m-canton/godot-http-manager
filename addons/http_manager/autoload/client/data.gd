@@ -47,7 +47,6 @@ func get_token_type() -> String:
 ## Returns [code]true[/code] if OAuth 2.0 token is valid.
 func check_token() -> bool:
 	_ensure_file()
-	print(_file.get_value("token", "expires_in", 0), " >=< ", Time.get_unix_time_from_system())
 	return _file.get_value("token", "expires_in", 0) > Time.get_unix_time_from_system()
 
 ## Stores API key and saves the file.

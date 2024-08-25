@@ -223,16 +223,36 @@ func _on_success(http_client: HTTPClient) -> void:
 	_next(r.route.client)
 
 #region Downloads
-## Downloads file to reference cache.
-const DOWNLOADS_FILE_PATH := "user://addons/http_manager/downloads.ini"
-
-var _downloads_file: ConfigFile
+var _cache := HTTPManagerCache.new()
 ## [HTTPManagerDownload] queue.
 var _downloads: Array[HTTPManagerDownload]
 ## [HTTPRequest]s to download files.
 var _active_downloads := 0
 ## Max concurrent downloads from project settings.
 var _max_concurrent_downloads := HTTPManagerDownload.get_max_concurrent_downloads()
+
+## See [method HTTPManagerCache.store_file].
+func cache_store_file(content: PackedByteArray, uri: String, options := {}) -> Error:
+	return _cache.store_file(content, uri, options)
+
+## See [method HTTPManagerCache.store_file_from_response].
+func cache_store_file_from_response(response: HTTPManagerResponse, uri: String) -> Error:
+	return _cache.store_file_from_response(response, uri)
+
+## See [method HTTPManagerCache.get_file_buffer].
+func cache_get_file_buffer(uri: String) -> PackedByteArray:
+	return _cache.get_file_buffer(uri)
+
+## See [method HTTPManagerCache.get_file_string].
+func cache_get_file_string(uri: String) -> String:
+	return _cache.get_file_string(uri)
+
+## See [method HTTPManagerCache.get_file_response].
+func cache_get_file_response(uri: String) -> HTTPManagerResponse:
+	return _cache.get_file_response(uri)
+
+func cache_clear_files(mb := -1) -> void:
+	_cache.clear_files(mb)
 
 ## Starts a download.
 func download(d: HTTPManagerDownload) -> Error:
@@ -244,14 +264,15 @@ func download(d: HTTPManagerDownload) -> Error:
 		push_error("Invalid download: ", d.url)
 		return FAILED
 	
+	var response := cache_get_file_response(d.url)
+	if response:
+		response.set_meta("download", d)
+		d.complete.call_deferred(response)
+		return OK
+	
 	_downloads.append(d)
 	_next_download()
 	return OK
-
-## Ensures downloads file exists.
-## @experimental
-func _ensure_downloads_file() -> Error:
-	return FAILED
 
 ## Starts next download if it exists. It can reuse a [HTTPRequest].
 func _next_download(hr: HTTPRequest = null) -> void:
@@ -268,6 +289,9 @@ func _next_download(hr: HTTPRequest = null) -> void:
 		hr.request_completed.connect(_on_download_completed.bind(hr.get_instance_id()))
 		add_child(hr)
 	
+	hr.download_file = d.path
+	hr.accept_gzip = d.content_encoding.has("gzip")
+	
 	var error := hr.request(d.url)
 	if error:
 		var response := HTTPManagerResponse.new()
@@ -282,14 +306,22 @@ func _next_download(hr: HTTPRequest = null) -> void:
 
 ## Called on download completed.
 func _on_download_completed(_result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray, hrid: int) -> void:
+	var hr: HTTPRequest = instance_from_id(hrid)
+	var d: HTTPManagerDownload = hr.get_meta(&"download")
+	
 	var response := HTTPManagerResponse.new()
 	response.successful = true
 	response.code = response_code
 	response.headers = headers
-	response.body = body
 	
-	var hr: HTTPRequest = instance_from_id(hrid)
-	var d: HTTPManagerDownload = hr.get_meta(&"download")
+	if d.path == "":
+		response.body = body
+	elif d.response_body:
+		response.body = FileAccess.get_file_as_bytes(d.path)
+	
+	if d.cache:
+		cache_store_file_from_response(response, d.url)
+	
 	d.complete(response)
 	
 	_active_downloads -= 1

@@ -18,6 +18,8 @@ var url := ""
 var headers := PackedStringArray()
 ## Download path.
 var path := ""
+## Indicates if response body is set when download path is specified.
+var response_body := true
 ## Indicates if it stores the data in cache.
 var cache := false
 ## It does nothing for now.
@@ -71,6 +73,7 @@ func set_gzip() -> HTTPManagerDownload:
 	return self
 
 ## Requests content encoding deflate.
+## @experimental
 func set_deflate() -> HTTPManagerDownload:
 	if not content_encoding.has("deflate"):
 		content_encoding.append("deflate")
@@ -82,6 +85,15 @@ func set_auth(client_data: HTTPManagerClientData, auth_type: HTTPManagerRoute.Au
 	if auth_type in [HTTPManagerRoute.AuthType.OAUTH2_CHECK, HTTPManagerRoute.AuthType.API_KEY_CHECK]:
 		_client_data = client_data
 		_auth_type = auth_type
+	return self
+
+func set_cache(new_cache := true) -> HTTPManagerDownload:
+	cache = new_cache
+	return self
+
+func set_path(new_path: String, set_response_body := true) -> HTTPManagerDownload:
+	path = new_path
+	response_body = set_response_body
 	return self
 #endregion
 

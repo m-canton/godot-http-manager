@@ -10,6 +10,8 @@ const FontSize := {
 ## [method download_image].
 var pending_images := {}
 
+@export var _cache_images := false
+
 ## Clears [member pending_images] and text and calls [method add_html].
 func set_html(html: String) -> Error:
 	clear()
@@ -33,7 +35,8 @@ func add_html(html: String) -> Error:
 				var count := 0
 				for i in range(parser.get_attribute_count()):
 					attributes[parser.get_attribute_name(i)] = parser.get_attribute_value(i)
-				match parser.get_node_name():
+				var node_name := parser.get_node_name()
+				match node_name:
 					"a":
 						push_meta(attributes.get("href", ""))
 						count += 1
@@ -57,23 +60,22 @@ func add_html(html: String) -> Error:
 						var texture := ImageTexture.create_from_image(image)
 						add_image(texture, 0, 0, Color.WHITE, INLINE_ALIGNMENT_CENTER, Rect2(), ikey)
 						pending_images[ikey] = attributes
-						print("+Img: ", attributes)
 					"br":
 						newline()
 					"div":
-						print("+Div: ", attributes)
 						newline()
 						count += 1
 					_:
 						print("Node no handled: ", parser.get_node_name())
 						print("- Attributes: ", attributes)
-						count += 1
-				open_tags.append(parser.get_node_name() + ":" + str(count))
+				open_tags.append(node_name + ":" + str(count))
 			XMLParser.NODE_ELEMENT_END:
-				var otag := open_tags[-1].split(":", false)
-				for i in range(otag[1].to_int()):
-					pop()
-				open_tags.remove_at(open_tags.size() - 1)
+				var i := open_tags.size() - 1
+				var otag := open_tags[i].split(":", false)
+				if otag[0] == parser.get_node_name():
+					for j in range(otag[1].to_int()):
+						pop()
+					open_tags.remove_at(i)
 			XMLParser.NODE_TEXT:
 				add_text(parser.get_node_data())
 			#XMLParser.NODE_COMMENT, XMLParser.NODE_CDATA, XMLParser.NODE_UNKNOWN: pass
@@ -89,7 +91,10 @@ func download_image(key: int, on_complete = null) -> Error:
 	var dict = pending_images.get(key)
 	if dict is Dictionary:
 		dict["on_complete_listener"] = on_complete
-		return HTTPManagerDownload.create_from_url(dict.get("src", "")).start(_on_image_downloaded.bind(key))
+		var d := HTTPManagerDownload.create_from_url(dict.get("src", ""))
+		if _cache_images:
+			d.set_cache()
+		return d.start(_on_image_downloaded.bind(key))
 	pending_images.erase(key)
 	return ERR_DOES_NOT_EXIST
 
