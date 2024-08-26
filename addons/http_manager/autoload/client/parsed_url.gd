@@ -1,4 +1,4 @@
-class_name HTTPManagerClientParsedUrl extends Node
+class_name HTTPManagerClientParsedUrl extends RefCounted
 
 ## URL scheme.
 var scheme := ""
@@ -55,7 +55,7 @@ func get_query_dict() -> Dictionary:
 		var pp := p.split("=")
 		if pp[0].is_empty(): continue
 		if pp.size() == 1: dict[pp[0]] = null
-		else: pp[1].uri_decode()
+		else: dict[pp[0]] = pp[1].uri_decode()
 	return dict
 
 ## Joins query param to the end. This method does not check if this param

@@ -259,9 +259,9 @@ static func check(r: HTTPManagerRequest) -> Error:
 	var client_secret := data.get_client_secret()
 	if client_secret != "": body_dict["client_secret"] = client_secret
 	
-	var rr := r.route.auth_route.auth_route.create_request().set_body(body_dict, MIME.Type.URL_ENCODED)
-	rr.set_meta(&"pending_request", r)
-	return rr.start(r.complete_with_auth2_token)
+	var refresh_token_request := r.route.auth_route.auth_route.create_request().set_body(body_dict, MIME.Type.URL_ENCODED)
+	refresh_token_request.set_meta(&"pending_request", r)
+	return refresh_token_request.start(r.complete_with_auth2_token)
 
 ## Saves the token in a config file. Response must have a JSON body with
 ## the following keys: access_token, refresh_token, expires_in, token_type.

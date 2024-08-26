@@ -264,11 +264,17 @@ func download(d: HTTPManagerDownload) -> Error:
 		push_error("Invalid download: ", d.url)
 		return FAILED
 	
-	var response := cache_get_file_response(d.url)
-	if response:
-		response.set_meta("download", d)
-		d.complete.call_deferred(response)
-		return OK
+	if d.cache_delay >= 0.0:
+		var response := cache_get_file_response(d.url)
+		if response:
+			if d.cache_delay == 0.0:
+				response.set_meta("download", d)
+				d.complete.call_deferred(response)
+			else:
+				var timer := get_tree().create_timer(d.cache_delay)
+				timer.set_meta("download", d)
+				timer.timeout.connect(d.complete.bind(response))
+			return OK
 	
 	_downloads.append(d)
 	_next_download()
@@ -319,7 +325,7 @@ func _on_download_completed(_result: int, response_code: int, headers: PackedStr
 	elif d.response_body:
 		response.body = FileAccess.get_file_as_bytes(d.path)
 	
-	if d.cache:
+	if d.cache_delay >= 0.0:
 		cache_store_file_from_response(response, d.url)
 	
 	d.complete(response)

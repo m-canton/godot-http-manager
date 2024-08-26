@@ -11,6 +11,12 @@ const FontSize := {
 var pending_images := {}
 
 @export var _cache_images := false
+@export var _cache_delay := 0.0
+
+func reset() -> void:
+	clear()
+	pending_images.clear()
+	scroll_to_line(0)
 
 ## Clears [member pending_images] and text and calls [method add_html].
 func set_html(html: String) -> Error:
@@ -41,6 +47,11 @@ func add_html(html: String) -> Error:
 						push_meta(attributes.get("href", ""))
 						count += 1
 					"p":
+						push_paragraph(HORIZONTAL_ALIGNMENT_FILL)
+						push_font_size(8)
+						add_text(" ")
+						pop()
+						pop()
 						attributes.get("style", "")
 						push_paragraph(HORIZONTAL_ALIGNMENT_LEFT)
 						count += 1
@@ -93,7 +104,7 @@ func download_image(key: int, on_complete = null) -> Error:
 		dict["on_complete_listener"] = on_complete
 		var d := HTTPManagerDownload.create_from_url(dict.get("src", ""))
 		if _cache_images:
-			d.set_cache()
+			d.set_cache(_cache_delay)
 		return d.start(_on_image_downloaded.bind(key))
 	pending_images.erase(key)
 	return ERR_DOES_NOT_EXIST

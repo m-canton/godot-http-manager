@@ -20,8 +20,8 @@ var headers := PackedStringArray()
 var path := ""
 ## Indicates if response body is set when download path is specified.
 var response_body := true
-## Indicates if it stores the data in cache.
-var cache := false
+## It stores data in cache if it is non-negative.
+var cache_delay := -1.0
 ## It does nothing for now.
 var priority := 0
 ## It indicates if it is valid.
@@ -87,8 +87,8 @@ func set_auth(client_data: HTTPManagerClientData, auth_type: HTTPManagerRoute.Au
 		_auth_type = auth_type
 	return self
 
-func set_cache(new_cache := true) -> HTTPManagerDownload:
-	cache = new_cache
+func set_cache(delay := 0.0) -> HTTPManagerDownload:
+	cache_delay = delay
 	return self
 
 func set_path(new_path: String, set_response_body := true) -> HTTPManagerDownload:
