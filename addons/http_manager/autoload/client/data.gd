@@ -75,6 +75,10 @@ func save_oauth2_token_from_response(response: HTTPManagerResponse) -> Error:
 		push_error("Auth Token Response is not JSON: ", token_dict)
 		return FAILED
 	
+	return save_oauth2_token_from_dict(token_dict)
+
+## Stores token keys and saves the file.
+func save_oauth2_token_from_dict(token_dict: Dictionary) -> Error:
 	if token_dict.has("error"):
 		push_error("Error from Token Dict: ", token_dict)
 		return FAILED
