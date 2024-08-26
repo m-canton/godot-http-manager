@@ -197,6 +197,8 @@ func _handle_code_request(request_string: String) -> bool:
 		return true
 	
 	_token_request_body["code"] = _code
+	var client_secret := request.route.auth_route.client.data.get_client_secret()
+	if client_secret != "": _token_request_body["client_secret"] = client_secret
 	
 	request.route.auth_route.create_request() \
 			.set_body(_token_request_body, MIME.Type.URL_ENCODED) \

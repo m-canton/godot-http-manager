@@ -76,7 +76,7 @@ func save_oauth2_token_from_response(response: HTTPManagerResponse) -> Error:
 		return FAILED
 	
 	if token_dict.has("error"):
-		push_error("Error from Token Dict: ", token_dict.error)
+		push_error("Error from Token Dict: ", token_dict)
 		return FAILED
 	
 	if not token_dict.has("access_token"):
