@@ -39,6 +39,10 @@ func get_refresh_token() -> String:
 	_ensure_file()
 	return _file.get_value("token", "refresh_token", "")
 
+func get_expiration_time() -> int:
+	_ensure_file()
+	return _file.get_value("token", "expires_in", 0)
+
 ## Returns OAuth 2.0 token type.
 func get_token_type() -> String:
 	_ensure_file()
@@ -64,8 +68,6 @@ func save_client(id: String, secret := "") -> Error:
 
 ## Stores token keys and saves the file.
 func save_oauth2_token_from_response(response: HTTPManagerResponse) -> Error:
-	if not _ensure_file(): return _load_error
-	
 	if not response.successful:
 		push_error("Auth Token Request Error. Code: ", response.code)
 		return FAILED
@@ -79,6 +81,8 @@ func save_oauth2_token_from_response(response: HTTPManagerResponse) -> Error:
 
 ## Stores token keys and saves the file.
 func save_oauth2_token_from_dict(token_dict: Dictionary) -> Error:
+	if not _ensure_file(): return _load_error
+	
 	if token_dict.has("error"):
 		push_error("Error from Token Dict: ", token_dict)
 		return FAILED
