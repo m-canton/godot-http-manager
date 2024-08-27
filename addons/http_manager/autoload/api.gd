@@ -26,6 +26,12 @@ func create_route(uri: String) -> HTTPManagerRoute:
 	r.uri_pattern = uri
 	return r
 
+func _get_base_dir() -> String:
+	return ""
+
+func _request(route_filename: String, url_params := {}) -> HTTPManagerRequest:
+	return (load(_get_base_dir().path_join(route_filename) + ".tres") as HTTPManagerRoute).create_request(url_params)
+
 func _load_route(path: String) -> HTTPManagerRoute:
 	return load(path)
 
