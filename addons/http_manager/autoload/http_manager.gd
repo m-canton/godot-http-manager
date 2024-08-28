@@ -105,7 +105,7 @@ func cancel_all(c: HTTPManagerClient) -> void:
 #region Start Requests
 ## Do not call this method. Use [method HTTPManagerRequest.start] instead.
 ## @experimental
-func request(r: HTTPManagerRequest) -> Error:
+func start_request(r: HTTPManagerRequest) -> Error:
 	if not r:
 		push_error("Request is null.")
 		return FAILED
@@ -131,7 +131,7 @@ func request(r: HTTPManagerRequest) -> Error:
 
 ## Async request to use with await.
 func fetch(r: HTTPManagerRequest) -> Variant:
-	if request(r) == OK:
+	if start_request(r) == OK:
 		var response: HTTPManagerResponse = await r.completed
 		if response.successful:
 			return response.parse()
@@ -255,7 +255,7 @@ func cache_clear_files(mb := -1) -> void:
 	_cache.clear_files(mb)
 
 ## Starts a download.
-func download(d: HTTPManagerDownload) -> Error:
+func start_download(d: HTTPManagerDownload) -> Error:
 	if not HTTPManagerDownload:
 		push_error("Download is null.")
 		return FAILED

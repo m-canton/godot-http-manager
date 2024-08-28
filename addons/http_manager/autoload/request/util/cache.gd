@@ -1,4 +1,4 @@
-class_name HTTPManagerCache extends Node
+class_name HTTPManagerCache extends RefCounted
 
 ## HTTP Manager Cache.
 ## 

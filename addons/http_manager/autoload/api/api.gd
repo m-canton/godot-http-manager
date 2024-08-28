@@ -1,4 +1,4 @@
-class_name HTTPManagerAPI extends RefCounted
+class_name HTTPManagerAPI extends HTTPManagerAPIGroup
 
 ## HTTPManager API.
 ## 
@@ -26,14 +26,22 @@ func create_route(uri: String) -> HTTPManagerRoute:
 	r.uri_pattern = uri
 	return r
 
-func _get_base_dir() -> String:
-	return ""
-
-func _request(route_filename: String, url_params := {}) -> HTTPManagerRequest:
-	return (load(_get_base_dir().path_join(route_filename) + ".tres") as HTTPManagerRoute).create_request(url_params)
-
 func _load_route(path: String) -> HTTPManagerRoute:
 	return load(path)
 
-func _auth_type() -> void:
-	pass
+#region Overridable Methods
+## Returns API base dir, where files are stored. It must contain "routes"
+## subfolder.
+func _get_base_dir() -> String:
+	return ""
+
+## Returns API base URL. All routes are relative to this URL by default.
+func _get_base_url() -> String:
+	return ""
+#endregion
+
+#region Internal Methods
+## Returns routes dir.
+func _get_routes_dir() -> String:
+	return _get_base_dir().path_join("routes")
+#endregion

@@ -39,6 +39,7 @@ func get_refresh_token() -> String:
 	_ensure_file()
 	return _file.get_value("token", "refresh_token", "")
 
+## Returns OAuth 2.0 expiration time.
 func get_expiration_time() -> int:
 	_ensure_file()
 	return _file.get_value("token", "expires_in", 0)

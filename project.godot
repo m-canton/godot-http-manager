@@ -12,7 +12,7 @@ config_version=5
 
 config/name="HTTP Manager"
 config/tags=PackedStringArray("network", "plugin")
-run/main_scene="res://addons/http_manager/test/test.tscn"
+run/main_scene="res://test/test.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 config/icon="res://icon.webp"
 

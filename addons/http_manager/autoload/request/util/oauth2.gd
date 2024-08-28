@@ -235,7 +235,7 @@ static func check(r: HTTPManagerRequest) -> Error:
 			if access_token.is_empty():
 				push_error("No access token.")
 				return FAILED
-			return HTTPManagerRequest.http_manager.request(r.set_bearer_auth(access_token))
+			return HTTPManagerRequest.http_manager.start_request(r.set_bearer_auth(access_token))
 		else:
 			push_error("It cannot request. Unknown token type: ", token_type)
 			return FAILED

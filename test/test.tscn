@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3 uid="uid://cydv7wnl2j7mh"]
 
-[ext_resource type="Script" path="res://addons/http_manager/test/test.gd" id="1_ueaph"]
-[ext_resource type="PackedScene" uid="uid://bmyklmw3056p" path="res://addons/http_manager/test/object_card.tscn" id="2_ghxdl"]
+[ext_resource type="Script" path="res://test/test.gd" id="1_ueaph"]
+[ext_resource type="PackedScene" uid="uid://bmyklmw3056p" path="res://test/object_card.tscn" id="2_ghxdl"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_viix5"]
 content_margin_left = 8.0

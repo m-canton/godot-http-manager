@@ -118,7 +118,7 @@ func add_header(new_header: String) -> HTTPManagerRequest:
 	headers.append(new_header)
 	return self
 
-## Sets the body. [HTTPManager] uses [method MIME.var_to_string] to convert it.
+## Sets body. [HTTPManager] uses [method MIME.var_to_string] to convert it.
 func set_body(new_body, new_content_type := MIME.Type.NONE, new_attributes := {}) -> HTTPManagerRequest:
 	if route and route.method == HTTPManagerRoute.Method.GET:
 		push_error("GET request cannot set body.")
@@ -144,7 +144,16 @@ func set_body(new_body, new_content_type := MIME.Type.NONE, new_attributes := {}
 	
 	return self
 
-## Merges body if current body is [Dictionary].
+## Sets body as JSON. [param new_body] must be [Array] or [Dictionary].
+func set_json_body(new_body) -> HTTPManagerRequest:
+	return set_body(new_body, MIME.Type.JSON)
+
+## Sets body as URL ENCODED.
+func set_urlencoded_body(new_body: Dictionary) -> HTTPManagerRequest:
+	return set_body(new_body, MIME.Type.URL_ENCODED)
+
+## Merges body if current body is [Dictionary]. Useful for JSON and URL ENCODED
+## bodies.
 func merge_body(new_body: Dictionary, overwrite := true) -> HTTPManagerRequest:
 	if _body is Dictionary:
 		_body.merge(new_body, overwrite)
@@ -240,7 +249,7 @@ func start(listeners = null) -> Error:
 	elif route.auth_type == HTTPManagerRoute.AuthType.API_KEY_CHECK:
 		parsed_url.query_param_join("key", route.auth_route.client.data.get_api_key())
 	
-	return http_manager.request(self)
+	return http_manager.start_request(self)
 
 ## Creates a [OAuth2] with this request. Adds the following query params using
 ## [member route].client.data: response_type, redirect_uri and client_id.

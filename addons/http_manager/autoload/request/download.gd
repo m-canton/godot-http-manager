@@ -44,7 +44,7 @@ func start(listeners = null) -> Error:
 		return FAILED
 	
 	_listeners = HTTPManagerRequest.create_listeners_dict(listeners)
-	return HTTPManagerRequest.http_manager.download(self)
+	return HTTPManagerRequest.http_manager.start_download(self)
 
 ## Completes this download.
 func complete(response: HTTPManagerResponse) -> void:
