@@ -1,9 +1,17 @@
 class_name HTTPManagerResponse extends RefCounted
 
+## HTTP Manager Response
+## 
+## Response from a HTTP Manager request. It parses data using Content-Type
+## header.
+
 ## Body must be PackedByteArray or 
 var body
+## Code.
 var code := 0
+## Indicates if this response is successful.
 var successful := false
+## Headers.
 var headers := PackedStringArray()
 
 ## Returns parsed body using the indicated mimetype or Content-Type header.
@@ -15,6 +23,7 @@ func parse(mimetype := MIME.Type.NONE, attributes := {}) -> Variant:
 	if ct == "": return null
 	return _parse_body(MIME.string_to_type(ct), MIME.get_attributes(ct))
 
+## Returns Content-Type header value.
 func get_content_type() -> String:
 	return get_header("Content-Type")
 
@@ -26,6 +35,7 @@ func get_header(header_name: String) -> String:
 			return h.substr(header_name.length()).strip_edges()
 	return ""
 
+## Erases a header.
 func erase_header(header_name: String) -> void:
 	for i in range(headers.size()):
 		if headers[i].begins_with(header_name):

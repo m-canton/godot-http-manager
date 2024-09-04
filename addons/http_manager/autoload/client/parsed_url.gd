@@ -36,6 +36,7 @@ func get_full_path() -> String:
 	if fragment != "": s += "#" + fragment
 	return s
 
+#region Query
 ## Returns query string.
 func get_query_string() -> String:
 	return _query
@@ -97,7 +98,9 @@ func find_query_param(param: String, decode := true) -> String:
 			var value = p.substr(key.length())
 			return value.uri_decode() if decode else value
 	return ""
+#endregion
 
+#region Debug
 ## Prints URL parts.
 func print_parts() -> void:
 	print("Scheme: ", scheme)
@@ -109,3 +112,4 @@ func print_parts() -> void:
 	for key in dict:
 		print("- ", key, ": ", dict[key])
 	print("Fragment: ", fragment)
+#endregion

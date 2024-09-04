@@ -163,7 +163,10 @@ func start(options := {}) -> Error:
 		return FAILED
 	
 	var html = options.get("html")
-	_redirect_html = html.text if html is HTMLDocument else html if html is String else _redirect_html
+	if html is HTMLDocument:
+		_redirect_html = html.text
+	elif html is String:
+		_redirect_html = html
 	
 	return _start(options)
 

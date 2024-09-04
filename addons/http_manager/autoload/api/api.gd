@@ -2,32 +2,11 @@ class_name HTTPManagerAPI extends HTTPManagerAPIGroup
 
 ## HTTPManager API.
 ## 
-## [b]Work in progress.[/b] This class is to extend it and define requests. An
-## alternative to defining clients and routes via gdscript.
+## This class is to extend it and define requests. Override
+## [method _get_base_dir] to return the base dir for your API files. After
+## you can load relative route files with [method HTTPManagerAPIGroup._request].
 ## 
 ## @experimental
-
-## Checks if auth credentials are valid.
-## @experimental
-func auth_check() -> void:
-	pass
-
-## Creates a client.
-## @experimental
-func create_client(base_url: String) -> HTTPManagerClient:
-	var c := HTTPManagerClient.new()
-	c.base_url = base_url
-	return c
-
-## Creates a route.
-## @experimental
-func create_route(uri: String) -> HTTPManagerRoute:
-	var r := HTTPManagerRoute.new()
-	r.uri_pattern = uri
-	return r
-
-func _load_route(path: String) -> HTTPManagerRoute:
-	return load(path)
 
 #region Overridable Methods
 ## Returns API base dir, where files are stored. It must contain "routes"
@@ -36,9 +15,29 @@ func _get_base_dir() -> String:
 	return ""
 
 ## Returns API base URL. All routes are relative to this URL by default.
+## @deprecated
 func _get_base_url() -> String:
 	return ""
 #endregion
+
+## Checks if auth credentials are valid.
+## @experimental
+func auth_check() -> void:
+	pass
+
+## Creates a client.
+## @deprecated
+func create_client(base_url: String) -> HTTPManagerClient:
+	var c := HTTPManagerClient.new()
+	c.base_url = base_url
+	return c
+
+## Creates a route.
+## @deprecated
+func create_route(uri: String) -> HTTPManagerRoute:
+	var r := HTTPManagerRoute.new()
+	r.uri_pattern = uri
+	return r
 
 #region Internal Methods
 ## Returns routes dir.

@@ -19,3 +19,7 @@ func _get_routes_dir() -> String:
 func _request(route_filename: String, url_params := {}) -> HTTPManagerRequest:
 	return (load(_get_routes_dir().path_join(route_filename) + ".tres") as HTTPManagerRoute).create_request(url_params)
 #endregion
+
+
+static func create_subgroup(api: HTTPManagerAPI, subpath: String) -> void:
+	api._get_base_dir().path_join(subpath)
