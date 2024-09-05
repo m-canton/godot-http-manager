@@ -2,8 +2,13 @@
 extends EditorPlugin
 
 
+var export_plugin: EditorExportPlugin
+
+
 func _enter_tree() -> void:
 	add_autoload_singleton("HTTPManager", "res://addons/http_manager/autoload/http_manager.gd")
+	export_plugin = preload("res://addons/http_manager/export.gd").new()
+	add_export_plugin(export_plugin)
 	
 	# Settings
 	_set_setting(HTTPManagerDownload.SETTING_NAME_MAX_CONCURRENT_DOWNLOADS, HTTPManagerDownload.MAX_CONCURRENT_DOWNLOADS)
@@ -19,6 +24,8 @@ func _enter_tree() -> void:
 
 func _exit_tree() -> void:
 	remove_autoload_singleton("HTTPManager")
+	remove_export_plugin(export_plugin)
+	export_plugin = null
 
 
 func _set_setting(setting_name: String, default_value, basic := true, property_info := {}) -> void:

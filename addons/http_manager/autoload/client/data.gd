@@ -49,6 +49,17 @@ func get_token_type() -> String:
 	_ensure_file()
 	return _file.get_value("token", "token_type", "")
 
+## Returns token section as [Dictionary].
+func get_token_dict() -> Dictionary:
+	_ensure_file()
+	if not _file.has_section("token"):
+		return {}
+	
+	var dict := {}
+	for key in _file.get_section_keys("token"):
+		dict[key] = _file.get_value("token", key)
+	return dict
+
 ## Returns [code]true[/code] if OAuth 2.0 token is valid.
 func check_token() -> bool:
 	_ensure_file()
@@ -95,9 +106,9 @@ func save_oauth2_token_from_dict(token_dict: Dictionary) -> Error:
 	for key in token_dict:
 		var value = token_dict[key]
 		if key == "expires_in":
-			var t := Time.get_unix_time_from_system()
-			if float(value) < t:
-				value += t
+			value = int(value)
+			if value < 1000000000:
+				value += int(Time.get_unix_time_from_system())
 		_file.set_value("token", key, value)
 	
 	return save()
@@ -136,3 +147,13 @@ func _ensure_file() -> bool:
 	_file_path = _dir_path.path_join(HTTPManagerClient.CLIENT_FILENAME)
 	_load_error = _file.load(_file_path)
 	return true
+
+#region Debug
+## Prints file content.
+func print_file() -> void:
+	_ensure_file()
+	for section in _file.get_sections():
+		print("\n[" + section + "]")
+		for key in _file.get_section_keys(section):
+			print(key + " = " + str(_file.get_value(section, key)))
+#endregion
