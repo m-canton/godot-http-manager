@@ -15,9 +15,9 @@ enum ArrayParamFormat {
 	SPACE_SEPARATED, ## [code]foo=bar aux[/code]
 }
 
-enum ClientData {
-	TOKEN,
-	CACHE,
+enum Encoding {
+	GZIP,
+	DEFLATE,
 }
 
 ## See [method parse_url].
@@ -60,6 +60,8 @@ static var _url_regex: RegEx
 
 ## Client data to store cache references and auth credentials.
 @export var data: HTTPManagerClientData
+## Accept-Encoding header.
+@export var encodings: Array[Encoding]
 
 @export_group("URL Params", "url_param_")
 ## Replaces [code]true[/code] value by this string in url param values.
