@@ -128,16 +128,6 @@ func start_request(r: HTTPManagerRequest) -> Error:
 	_next(client)
 	
 	return OK
-
-## Async request to use with await.
-func fetch(r: HTTPManagerRequest) -> Variant:
-	if start_request(r) == OK:
-		var response: HTTPManagerResponse = await r.completed
-		if response.successful:
-			return response.parse()
-		else:
-			return null
-	return null
 #endregion
 
 ## Do not call this method. This method is used by HTTPManager to make next

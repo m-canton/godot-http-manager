@@ -251,6 +251,16 @@ func start(listeners = null) -> Error:
 	
 	return http_manager.start_request(self)
 
+## Async request to use with await.
+func start_await(r: HTTPManagerRequest) -> Variant:
+	if r.start() == OK:
+		var response: HTTPManagerResponse = await r.completed
+		if response.successful:
+			return response.parse()
+		else:
+			return null
+	return null
+
 ## Creates a [OAuth2] with this request. Adds the following query params using
 ## [member route].client.data: response_type, redirect_uri and client_id.
 func oauth2() -> OAuth2:
