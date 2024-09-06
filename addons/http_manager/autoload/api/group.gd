@@ -23,7 +23,7 @@ func _get_prefix() -> String:
 
 ## Returns routes dir path.
 func _get_routes_dir() -> String:
-	return ""
+	return (get_script() as GDScript).resource_path.get_base_dir()
 #endregion
 
 ## Returns a new request using a route filename relative to routes dir from

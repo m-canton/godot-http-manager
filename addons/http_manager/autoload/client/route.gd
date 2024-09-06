@@ -59,14 +59,20 @@ enum Encoding {
 			notify_property_list_changed()
 ## Auth route.
 var auth_route: HTTPManagerRoute
+## OAuth 2.0 Required Scopes.
+var auth_scopes: PackedStringArray
 
 ## Handles auth properties.
 func _validate_property(property: Dictionary) -> void:
-	if property.name == "auth_route":
-		if auth_type in [AuthType.OAUTH2_CHECK, AuthType.OAUTH2_CODE]:
-			property.usage |= PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR
-			property.hint = PROPERTY_HINT_RESOURCE_TYPE
-			property.hint_string = "HTTPManagerRoute"
+	match property.name:
+		"auth_route":
+			if auth_type in [AuthType.OAUTH2_CHECK, AuthType.OAUTH2_CODE]:
+				property.usage |= PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR
+				property.hint = PROPERTY_HINT_RESOURCE_TYPE
+				property.hint_string = "HTTPManagerRoute"
+		"auth_scopes":
+			if auth_type == AuthType.OAUTH2_CHECK:
+				property.usage |= PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR
 
 ## Creates a request to this route. Parses URI pattern with url params.
 func create_request(url_params := {}) -> HTTPManagerRequest:
