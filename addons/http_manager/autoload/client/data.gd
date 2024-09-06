@@ -13,6 +13,8 @@ var _file: ConfigFile
 var _file_path := ""
 ## Client data load error.
 var _load_error := FAILED
+## Missing scopes.
+var _missing_scopes: PackedStringArray
 
 ## Returns client ID.
 func get_client_id() -> String:
@@ -60,10 +62,31 @@ func get_token_dict() -> Dictionary:
 		dict[key] = _file.get_value("token", key)
 	return dict
 
+## Returns missing scopes after [method check_token_scopes] call.
+func get_missing_scopes() -> PackedStringArray:
+	return _missing_scopes
+
 ## Returns [code]true[/code] if OAuth 2.0 token is valid.
 func check_token() -> bool:
 	_ensure_file()
 	return _file.get_value("token", "expires_in", 0) > Time.get_unix_time_from_system()
+
+## Returns [code]true[/code] if token has route scopes.
+func check_token_scopes(request: HTTPManagerRequest) -> bool:
+	_missing_scopes.clear()
+	
+	var scopes := request.route.auth_scopes
+	if scopes.is_empty():
+		return true
+	
+	_ensure_file()
+	var token_scopes: PackedStringArray = _file.get_value("token", "scope", "").split(" ", false)
+	
+	for s in scopes:
+		if not s in token_scopes:
+			_missing_scopes.append(s)
+	
+	return _missing_scopes.is_empty()
 
 ## Stores API key and saves the file.
 func save_api_key(key: String) -> Error:
