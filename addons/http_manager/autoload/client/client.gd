@@ -37,6 +37,7 @@ const DEFAULT_DIR := "user://addons/http_manager"
 ## Client file name.
 const CLIENT_FILENAME := "client.ini"
 
+## RegEx to parse an URL with [method parse_url]
 static var _url_regex: RegEx
 
 ## Base URL. This string cannot end with [code]"/"[/code].[br]
@@ -216,6 +217,7 @@ static func parse_url(url: String) -> HTTPManagerClientParsedUrl:
 	parsed_url.fragment = result.get_string("fragment")
 	return parsed_url
 
-
+## Checks if this build is marked as server. When running in editor is always
+## server.
 static func is_server() -> bool:
 	return OS.has_feature("editor") or OS.has_feature("http_server")

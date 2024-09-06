@@ -77,6 +77,12 @@ func _process(delta: float) -> void:
 			queue_free()
 
 #region Chain Methods
+## Sets scope param as space-delimited string. It must be non-empty to add it.
+func set_scope(scopes: PackedStringArray) -> OAuth2:
+	if not scopes.is_empty():
+		request.parsed_url.query_param_join("scope", " ".join(scopes))
+	return self
+
 ## Enables PKCE and adds code_challenge as URL query param. [param method] must
 ## be [code]"plain"[/code] or [code]"S256"[/code]. Changes code_challenge,
 ## code_challenge_method and code_verifier param names using [param params].[br]
