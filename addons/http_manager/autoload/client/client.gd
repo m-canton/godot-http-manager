@@ -215,3 +215,7 @@ static func parse_url(url: String) -> HTTPManagerClientParsedUrl:
 	parsed_url.set_query(result.get_string("query"))
 	parsed_url.fragment = result.get_string("fragment")
 	return parsed_url
+
+
+static func is_server() -> bool:
+	return OS.has_feature("editor") or OS.has_feature("http_server")

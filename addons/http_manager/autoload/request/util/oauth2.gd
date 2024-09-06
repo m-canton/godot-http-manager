@@ -19,7 +19,7 @@ const SETTING_NAME_PORT := "addons/http_manager/auth/port"
 ## Default local server port.
 const DEFAULT_PORT := 8120
 ## Default local server callback path.
-const SETTING_NAME_CALLBACK_PATH := "addons/http_manager/auth/callback"
+const SETTING_NAME_CALLBACK_PATH := "addons/http_manager/auth/callback_path"
 ## Default local server callback path.
 const DEFAULT_CALLBACK_PATH := "/auth/callback"
 
@@ -231,6 +231,7 @@ static func get_local_server_redirect_uri(subpath := "") -> String:
 ## update it and after requests [param r].
 static func check(r: HTTPManagerRequest) -> Error:
 	var data := r.route.auth_route.client.data
+	
 	if data.check_token():
 		var token_type: String = data.get_token_type()
 		if token_type == "Bearer":
@@ -242,6 +243,10 @@ static func check(r: HTTPManagerRequest) -> Error:
 		else:
 			push_error("It cannot request. Unknown token type: ", token_type)
 			return FAILED
+	
+	if not HTTPManagerClient.is_server():
+		push_warning("Access token has expired. Refresh token with server.")
+		return FAILED
 	
 	var client_id: String = data.get_client_id()
 	if client_id.is_empty():

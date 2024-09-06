@@ -278,7 +278,7 @@ func oauth2() -> OAuth2:
 	
 	return oa
 
-## Requests the OS to open URL. See [method OS.shell_open].
+## Requests OS to open URL. See [method OS.shell_open].
 func shell() -> Error:
 	var url := parsed_url.get_url()
 	if url.is_empty():
