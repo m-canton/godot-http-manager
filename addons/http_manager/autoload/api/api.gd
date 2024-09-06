@@ -2,8 +2,7 @@ class_name HTTPManagerAPI extends HTTPManagerAPIGroup
 
 ## HTTPManager API.
 ## 
-## This class is to extend it and define requests. Override
-## [method _get_base_dir] to return the base dir for your API files. After
+## This class is to extend it and define requests. After
 ## you can load relative route files with [method HTTPManagerAPIGroup._request].
 ## 
 ## @experimental
@@ -12,7 +11,7 @@ class_name HTTPManagerAPI extends HTTPManagerAPIGroup
 ## Returns API base dir, where files are stored. It must contain "routes"
 ## subfolder.
 func _get_base_dir() -> String:
-	return ""
+	return (get_script() as GDScript).resource_path.get_base_dir()
 
 ## Returns API base URL. All routes are relative to this URL by default.
 ## @deprecated
