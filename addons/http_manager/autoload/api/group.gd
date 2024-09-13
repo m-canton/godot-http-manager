@@ -41,6 +41,18 @@ func _oauth2_check() -> bool:
 func _prefix() -> String:
 	return ""
 
+func _validate(data: Array) -> Dictionary:
+	var dict := {}
+	for value in data:
+		if value[0] == true:
+			dict[value[1]] = value[2]
+	return dict
+
+func _rule(key: String, value, default_value, rules := []) -> Array:
+	if value == default_value:
+		return [false, key]
+	return [true, key, value]
+
 ## Returns a new request using a route filename relative to routes dir from
 ## [method _get_base_dir()]. Do not add ".tres".
 func _request(route_filename := "", url_params := {}) -> HTTPManagerRequest:

@@ -10,7 +10,7 @@ class_name HTTPManagerAPI extends HTTPManagerAPIGroup
 var _client: HTTPManagerClient
 
 ## Override this method and use [method _create_client] to set a client.
-func _init(_parent: HTTPManagerAPIGroup = null) -> void:
+func _init() -> void:
 	pass
 
 #region Overridable Methods
@@ -26,7 +26,7 @@ func _get_base_url() -> String:
 #endregion
 
 ## Creates a client.
-func _create_client(base_url: String, path: String) -> HTTPManagerClient:
+func _define_client(path: String, base_url: String) -> HTTPManagerClient:
 	_client = HTTPManagerClient.new()
 	_client.base_url = base_url
 	
