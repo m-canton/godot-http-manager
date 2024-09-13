@@ -10,7 +10,7 @@ enum AuthType {
 	NONE, ## No Auth Route.
 	OAUTH2_CODE, ## OAuth 2.0 Code Authorization Route.
 	OAUTH2_TOKEN, ## OAuth 2.0 Access Token Route.
-	OAUTH2_CHECK, ## Use OAuth 2.0 credentials.
+	TOKEN_CHECK, ## Use OAuth 2.0 credentials.
 	API_KEY_CHECK, ## Use API key credential.
 }
 
@@ -59,12 +59,12 @@ var auth_scopes: PackedStringArray
 func _validate_property(property: Dictionary) -> void:
 	match property.name:
 		"auth_route":
-			if auth_type in [AuthType.OAUTH2_CHECK, AuthType.OAUTH2_CODE]:
+			if auth_type in [AuthType.TOKEN_CHECK, AuthType.OAUTH2_CODE]:
 				property.usage |= PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR
 				property.hint = PROPERTY_HINT_RESOURCE_TYPE
 				property.hint_string = "HTTPManagerRoute"
 		"auth_scopes":
-			if auth_type == AuthType.OAUTH2_CHECK:
+			if auth_type == AuthType.TOKEN_CHECK:
 				property.usage |= PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR
 
 ## Creates a request to this route. Parses URI pattern with url params.
@@ -78,7 +78,7 @@ func create_request(url_params := {}) -> HTTPManagerRequest:
 	
 	for h in headers:
 		if not h in r.headers:
-			r.headers.append(h)
+			r.add_header(h)
 	
 	if not client:
 		push_warning("Invalid request. Client is null.")
@@ -87,7 +87,7 @@ func create_request(url_params := {}) -> HTTPManagerRequest:
 	
 	for h in client.headers:
 		if not h in r.headers:
-			r.headers.append(h)
+			r.add_header(h)
 	
 	# Accept-Encoding header
 	var encoding_strings: PackedStringArray
@@ -116,7 +116,7 @@ func _validate_auth() -> bool:
 			return false
 	
 	## Check requires Code. It uses access token if it exists.
-	if auth_type == AuthType.OAUTH2_CHECK:
+	if auth_type == AuthType.TOKEN_CHECK:
 		if not auth_route or auth_route.auth_type != AuthType.OAUTH2_CODE:
 			push_warning("'auth_route' must be OAuth 2.0 Authorization Code type: ", resource_path)
 			return false

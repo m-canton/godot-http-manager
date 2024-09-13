@@ -1,4 +1,4 @@
-class_name HTTPManagerRequest extends RefCounted
+class_name HTTPManagerRequest extends HTTPManagerStream
 
 signal completed(response: HTTPManagerResponse)
 
@@ -20,8 +20,6 @@ enum Listener {
 var route: HTTPManagerRoute
 ## Overrides route priority. See [HTTPManagerRoute.priority].
 var priority := -1
-## Headers.
-var headers: PackedStringArray
 ## Body.
 var _body = null
 ## Body MIME type.
@@ -113,9 +111,24 @@ func _set_auth(auth_value: String) -> HTTPManagerRequest:
 #endregion
 
 #region Chain Methods
-## Adds a new header.
+## See [method HTTPManagerStream].
 func add_header(new_header: String) -> HTTPManagerRequest:
-	headers.append(new_header)
+	return super(new_header)
+
+## Sets accept header as a MIME type. If you need more types, use
+## [method add_header] instead.
+func accept(type: MIME.Type, attributes := {}) -> HTTPManagerRequest:
+	add_header(MIME.type_to_accept(type, attributes))
+	return self
+
+## Sets accept header as JSON.
+func accept_json() -> HTTPManagerRequest:
+	add_header(MIME.type_to_accept(MIME.Type.JSON))
+	return self
+
+## Sets accept header as XML.
+func accept_xml() -> HTTPManagerRequest:
+	add_header(MIME.type_to_accept(MIME.Type.XML))
 	return self
 
 ## Sets body. [HTTPManager] uses [method MIME.var_to_string] to convert it.
@@ -244,7 +257,7 @@ func start(listeners = null) -> Error:
 		complete(response)
 		return FAILED
 	
-	if route.auth_type == HTTPManagerRoute.AuthType.OAUTH2_CHECK:
+	if route.auth_type == HTTPManagerRoute.AuthType.TOKEN_CHECK:
 		return OAuth2.check(self)
 	elif route.auth_type == HTTPManagerRoute.AuthType.API_KEY_CHECK:
 		parsed_url.query_param_join("key", route.auth_route.client.data.get_api_key())

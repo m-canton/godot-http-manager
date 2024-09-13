@@ -1,18 +1,18 @@
-class_name HTTPManagerResponse extends RefCounted
+class_name HTTPManagerResponse extends HTTPManagerStream
 
 ## HTTP Manager Response
 ## 
 ## Response from a HTTP Manager request. It parses data using Content-Type
 ## header.
 
-## Body must be PackedByteArray or 
-var body
 ## Code.
 var code := 0
 ## Indicates if this response is successful.
 var successful := false
-## Headers.
-var headers := PackedStringArray()
+
+## See [method HTTPManagerStream].
+func add_header(new_header: String) -> HTTPManagerResponse:
+	return super(new_header)
 
 ## Returns parsed body using the indicated mimetype or Content-Type header.
 func parse(mimetype := MIME.Type.NONE, attributes := {}) -> Variant:

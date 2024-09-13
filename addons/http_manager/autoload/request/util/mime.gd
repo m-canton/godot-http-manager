@@ -16,6 +16,8 @@ enum Type {
 	WEBP, ## image/webp
 	WEBM_AUDIO, ## audio/webm
 	WEBM_VIDEO, ## video/webm
+	XHTML,
+	XML,
 }
 
 ## MIME Type map.
@@ -26,6 +28,8 @@ const TypeDict := {
 	"application": {
 		"json": Type.JSON,
 		"x-www-form-urlencoded": Type.URL_ENCODED,
+		"xml": Type.XML,
+		"xhtml+xml": Type.XHTML,
 	},
 	"image": {
 		"jpeg": Type.JPG,

@@ -1,4 +1,4 @@
-class_name HTTPManagerDownload extends RefCounted
+class_name HTTPManagerDownload extends HTTPManagerStream
 
 ## HTTP Manager Download
 ## 
@@ -14,8 +14,6 @@ const MAX_CONCURRENT_DOWNLOADS := 1
 
 ## Request URL.
 var url := ""
-## Headers.
-var headers := PackedStringArray()
 ## Download path.
 var path := ""
 ## Indicates if response body is set when download path is specified.
@@ -60,11 +58,9 @@ func complete(response: HTTPManagerResponse) -> void:
 				_listeners[key].call(response)
 
 #region Chain Methods
-## Adds a header.
-func add_header(h: String) -> HTTPManagerDownload:
-	#var hkey := header.get_slice(":", 0) + ":" # To check if header exists.
-	headers.append(h)
-	return self
+## See [method HTTPManagerStream].
+func add_header(new_header: String) -> HTTPManagerDownload:
+	return super(new_header)
 
 ## Requests content encoding gzip.
 func set_gzip() -> HTTPManagerDownload:
@@ -82,15 +78,18 @@ func set_deflate() -> HTTPManagerDownload:
 ## Sets authorization. It does nothing for now.
 ## @experimental
 func set_auth(client_data: HTTPManagerClientData, auth_type: HTTPManagerRoute.AuthType) -> HTTPManagerDownload:
-	if auth_type in [HTTPManagerRoute.AuthType.OAUTH2_CHECK, HTTPManagerRoute.AuthType.API_KEY_CHECK]:
+	if auth_type in [HTTPManagerRoute.AuthType.TOKEN_CHECK, HTTPManagerRoute.AuthType.API_KEY_CHECK]:
 		_client_data = client_data
 		_auth_type = auth_type
 	return self
 
+## Enables cache.
 func set_cache(delay := 0.0) -> HTTPManagerDownload:
 	cache_delay = delay
 	return self
 
+## Sets path. If you do not need file content in response body, set
+## [code]false[/false] in [param set_response_body].
 func set_path(new_path: String, set_response_body := true) -> HTTPManagerDownload:
 	path = new_path
 	response_body = set_response_body
