@@ -1,6 +1,6 @@
 extends Node
 
-const RESTFUL_API_OBJECTS = preload("res://addons/http_manager/test/restful_api/routes/objects.tres")
+const RESTFUL_API_OBJECTS = preload("restful_api/routes/objects.tres")
 
 
 func _ready():
@@ -10,7 +10,7 @@ func _ready():
 
 
 #region Search Many
-const OBJECT_CARD = preload("res://addons/http_manager/test/object_card.tscn")
+const OBJECT_CARD = preload("object_card.tscn")
 
 @onready var objects_button: Button = $MarginContainer/HBoxContainer/Objects/SearchButton
 @onready var object_list: VBoxContainer = $MarginContainer/HBoxContainer/Objects/ScrollContainer/VBoxContainer
@@ -41,7 +41,7 @@ func _on_objects_received(response: HTTPManagerResponse) -> void:
 
 
 #region Search One
-const OBJECTS_SHOW = preload("res://addons/http_manager/test/restful_api/routes/objects_show.tres")
+const OBJECTS_SHOW = preload("restful_api/routes/objects_show.tres")
 
 @onready var line_edit: LineEdit = $MarginContainer/HBoxContainer/ObjectsShow/LineEdit
 @onready var searched_object_card: PanelContainer = $MarginContainer/HBoxContainer/ObjectsShow/ObjectCard
@@ -79,9 +79,9 @@ func _on_object_received(response: HTTPManagerResponse) -> void:
 
 
 #region Edit
-const OBJECT_DATA_FIELD = preload("res://addons/http_manager/test/object_data_field.tscn")
-const OBJECTS_STORE = preload("res://addons/http_manager/test/restful_api/routes/objects_store.tres")
-const OBJECTS_UPDATE = preload("res://addons/http_manager/test/restful_api/routes/objects_update.tres")
+const OBJECT_DATA_FIELD = preload("object_data_field.tscn")
+const OBJECTS_STORE = preload("restful_api/routes/objects_store.tres")
+const OBJECTS_UPDATE = preload("restful_api/routes/objects_update.tres")
 
 var _editing_object := "":
 	set(value):
