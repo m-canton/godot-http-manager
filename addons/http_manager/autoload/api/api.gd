@@ -7,6 +7,12 @@ class_name HTTPManagerAPI extends HTTPManagerAPIGroup
 ## 
 ## @experimental
 
+var _client: HTTPManagerClient
+
+## Override this method and use [method _create_client] to set a client.
+func _init(_parent: HTTPManagerAPIGroup = null) -> void:
+	pass
+
 #region Overridable Methods
 ## Returns API base dir, where files are stored. It must contain "routes"
 ## subfolder.
@@ -19,26 +25,33 @@ func _get_base_url() -> String:
 	return ""
 #endregion
 
+## Creates a client.
+func _create_client(base_url: String, path: String) -> HTTPManagerClient:
+	_client = HTTPManagerClient.new()
+	_client.base_url = base_url
+	
+	_client.data = HTTPManagerClientData.new()
+	_client.data.path = path
+	return _client
+
 ## Checks if auth credentials are valid.
 ## @experimental
 func auth_check() -> void:
 	pass
 
-## Creates a client.
-## @deprecated
-func create_client(base_url: String) -> HTTPManagerClient:
-	var c := HTTPManagerClient.new()
-	c.base_url = base_url
-	return c
-
+#region Private Methods
 ## Creates a route.
-## @deprecated
-func create_route(uri: String) -> HTTPManagerRoute:
-	var r := HTTPManagerRoute.new()
-	r.uri_pattern = uri
-	return r
+func create_route(path: String, method: HTTPClient.Method) -> HTTPManagerRoute:
+	if not _client:
+		push_error("No client.")
+		return null
+	
+	var route := HTTPManagerRoute.new()
+	route.client = _client
+	route.uri_pattern = path
+	route.method = HTTPManagerRoute.Method.values()[method]
+	return route
 
-#region Internal Methods
 ## Returns routes dir.
 func _get_routes_dir() -> String:
 	return _get_base_dir().path_join("routes")

@@ -2,29 +2,44 @@ class_name HTTPManagerAPIGroup extends RefCounted
 
 ## HTTPManager API Group
 ## 
-## Using a routes subfolder, it creates an API route group.
+## API Groups is used to split routes in multiple scripts. You can define a
+## global prefix to add it to parent URL.
+## 
 ## [codeblock]
-## # Main api.gd
-## var posts := preload("res://http/myapi/routes/posts/api.gd").new()
+## # groups/posts.gd
+## extends HTTPManagerAPIGroup
+##
+## func _prefix() -> String:
+##     return "posts"
+## 
+## # api.gd
+## extends HTTPManagerAPI
+## 
+## var posts := preload("res://http/myapi/groups/posts.gd").new(self)
 ## 
 ## # Scene script.
 ## var _api := preload("res://http/myapi/api.gd")
 ## 
-## _api.posts.search("query").start()
+## _api.posts.search("query").start() # Names are autocompleted
 ## [/codeblock]
 
-var _weak_parent: HTTPManagerAPIGroup
+## Parent [WeakRef].
+var _weak_parent: WeakRef
+## Current request created with [method _route].
 var _current_request: HTTPManagerRequest
 
-func _init(parent: HTTPManagerAPIGroup = null) -> void:
+## Pass [HTTPManagerAPIGroup] as parent. Ensure root is [HTTPManagerAPI] with
+## a base URL.
+func _init(parent: HTTPManagerAPIGroup) -> void:
 	_weak_parent = weakref(parent)
 
-#region Overridable Methods
-## Route path prefix.
-## @experimental
+#region Protected Methods
+func _oauth2_check() -> bool:
+	return false
+
+## Returns prefix.
 func _prefix() -> String:
 	return ""
-#endregion
 
 ## Returns a new request using a route filename relative to routes dir from
 ## [method _get_base_dir()]. Do not add ".tres".
@@ -41,14 +56,7 @@ func _request(route_filename := "", url_params := {}) -> HTTPManagerRequest:
 ## Creates a route.
 ## @experimental
 func _route(path: String, method: HTTPClient.Method, params := {}) -> HTTPManagerRequest:
-	var route := HTTPManagerRoute.new()
-	route.uri_pattern = path
-	route.method = HTTPManagerRoute.Method.values()[method]
-	
-	_current_request = HTTPManagerRequest.new()
-	_current_request.route = route
-	_current_request.set_url_params(params)
-	_current_request.parsed_url = _parse_path(path)
+	_current_request = create_route(path, method).create_request(params)
 	
 	return _current_request
 
@@ -71,8 +79,9 @@ func _route_patch(path: String, params := {}) -> HTTPManagerRequest:
 ## Creates a route with delete method.
 func _route_delete(path: String, params := {}) -> HTTPManagerRequest:
 	return _route(path, HTTPClient.METHOD_DELETE, params)
+#endregion
 
-#region Internal Methods
+#region Private Methods
 ## @experimental
 func _parse_path(path: String) -> HTTPManagerClientParsedUrl:
 	return HTTPManagerClient.parse_url(path)
@@ -80,4 +89,10 @@ func _parse_path(path: String) -> HTTPManagerClientParsedUrl:
 ## Returns routes dir path.
 func _get_routes_dir() -> String:
 	return (get_script() as GDScript).resource_path.get_base_dir()
+
+func create_route(path: String, method: HTTPClient.Method) -> HTTPManagerRoute:
+	if _weak_parent:
+		return (_weak_parent.get_ref() as HTTPManagerAPIGroup) \
+				.create_route(_prefix().path_join(path), method)
+	return null
 #endregion

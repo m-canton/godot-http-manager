@@ -3,7 +3,7 @@ class_name HTTPManagerClientData extends Resource
 ## @experimental
 
 ## Client data dir path relative to [method HTTPManagerClient.get_clients_dir()].
-@export var subpath := ""
+@export var path := ""
 
 ## Client data dir path.
 var _dir_path := ""
@@ -162,11 +162,11 @@ func _ensure_file() -> bool:
 		return false if _load_error == ERR_FILE_BAD_PATH else true
 	
 	_file = ConfigFile.new()
-	if subpath.is_empty():
-		push_error("'subpath' is empty. It cannot save the file.")
+	if path.is_empty():
+		push_error("'path' is empty. It cannot save the file.")
 		_load_error = ERR_FILE_BAD_PATH
 		return false
-	_dir_path = HTTPManagerClient.get_clients_dir().path_join(subpath)
+	_dir_path = HTTPManagerClient.get_clients_dir().path_join(path)
 	_file_path = _dir_path.path_join(HTTPManagerClient.CLIENT_FILENAME)
 	_load_error = _file.load(_file_path)
 	return true
