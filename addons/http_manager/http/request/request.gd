@@ -120,8 +120,8 @@ func _set_auth(auth_value: String) -> HTTPManagerRequest:
 
 #region Chain Methods
 ## See [method HTTPManagerStream].
-func set_header(new_header: String) -> HTTPManagerRequest:
-	return super(new_header)
+func set_header(new_header: String, multiple := false) -> HTTPManagerRequest:
+	return super(new_header, multiple)
 
 ## Sets accept header as a MIME type. If you need more types, use
 ## [method add_header] instead.

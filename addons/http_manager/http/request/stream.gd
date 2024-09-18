@@ -5,8 +5,8 @@ class_name HTTPManagerStream extends RefCounted
 var headers: PackedStringArray
 ## Body.
 var body
-var _mimetype := MIME.Type.NONE
-var _attributes := {}
+var mimetype := MIME.Type.NONE
+var attributes := {}
 
 ## Adds a new header. It change the value if it already exists.[br]
 ## RFC 7230 states header name is case-insensitive.
@@ -54,11 +54,11 @@ func get_body_as_buffer() -> PackedByteArray:
 	if body is PackedByteArray:
 		return body
 	
-	return MIME.var_to_buffer(body, _mimetype, _attributes)
+	return MIME.var_to_buffer(body, mimetype, attributes)
 
 ## Returns body as [String].
 func get_body_as_string() -> String:
 	if body is String:
 		return body
 	
-	return MIME.var_to_string(body, _mimetype, _attributes)
+	return MIME.var_to_string(body, mimetype, attributes)
