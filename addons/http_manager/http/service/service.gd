@@ -13,11 +13,11 @@ func _base_url() -> String:
 	return ""
 
 
-func _default_auth() -> Array[HTTPManagerAuthenticator]:
+func _default_auth() -> Array[HTTPManagerAuth]:
 	return []
 
 
-func _default_oauth_config() -> HTTPManagerServiceOAuthConfig:
+func _default_oauth_config() -> HTTPManagerOAuthConfig:
 	return null
 #endregion
 
@@ -26,11 +26,13 @@ func get_url(path: String) -> void:
 
 ## Sets authentication credentials in the current request. It uses authenticator from
 ## [method _default_auth] if [param authenticators] is empty.
-func authenticate(authenticators: Array[HTTPManagerAuthenticator] = []) -> Error:
-	if authenticators.is_empty():
-		authenticators = _default_auth()
+func authorize(auths: Array[HTTPManagerAuth] = []) -> Error:
+	if auths.is_empty():
+		auths = _default_auth()
 	
-	for a in authenticators:
-		a.handle(_current_request)
+	for a in auths:
+		var r := a.handle(_current_request)
+		if r:
+			r.start()
 	
 	return OK

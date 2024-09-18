@@ -1,7 +1,4 @@
-class_name HTTPManagerBasicAuthenticator extends HTTPManagerAuthenticator
-
-
-var token := ""
+class_name HTTPManagerAuthToken extends HTTPManagerAuth
 
 
 func handle(request: HTTPManagerRequest) -> HTTPManagerRequest:

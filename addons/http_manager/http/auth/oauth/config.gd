@@ -1,4 +1,4 @@
-class_name HTTPManagerServiceOAuthConfig extends RefCounted
+class_name HTTPManagerOAuthConfig extends RefCounted
 
 
 var client_id := ""
