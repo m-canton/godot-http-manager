@@ -11,7 +11,7 @@ var code := 0
 var successful := false
 
 ## See [method HTTPManagerStream].
-func add_header(new_header: String) -> HTTPManagerResponse:
+func set_header(new_header: String) -> HTTPManagerResponse:
 	return super(new_header)
 
 ## Returns parsed body using the indicated mimetype or Content-Type header.

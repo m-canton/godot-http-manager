@@ -25,7 +25,8 @@ func _get_base_url() -> String:
 	return ""
 #endregion
 
-## Creates a client.
+## Creates a client.[br]
+## [param path] is the relative path to save the client.ini file.
 func _define_client(path: String, base_url: String) -> HTTPManagerClient:
 	_client = HTTPManagerClient.new()
 	_client.base_url = base_url
@@ -48,6 +49,8 @@ func create_route(path: String, method: HTTPClient.Method) -> HTTPManagerRoute:
 	
 	var route := HTTPManagerRoute.new()
 	route.client = _client
+	if not path.begins_with("/"):
+		path = "/" + path
 	route.uri_pattern = path
 	route.method = HTTPManagerRoute.Method.values()[method]
 	return route

@@ -16,10 +16,18 @@ enum Listener {
 	FAILURE,
 }
 
+enum Status {
+	QUEUE,
+	AUTHENTICATING,
+	COMPLETED,
+}
+
 ## Route resource.
 var route: HTTPManagerRoute
 ## Overrides route priority. See [HTTPManagerRoute.priority].
 var priority := -1
+## Status.
+var status := Status.QUEUE
 ## Body.
 var _body = null
 ## Body MIME type.
@@ -106,29 +114,29 @@ func set_diggest_auth(_username: String, _password: String) -> HTTPManagerReques
 
 ## Adds Authorization header.
 func _set_auth(auth_value: String) -> HTTPManagerRequest:
-	add_header("Authorization: " + auth_value)
+	set_header("Authorization: " + auth_value)
 	return self
 #endregion
 
 #region Chain Methods
 ## See [method HTTPManagerStream].
-func add_header(new_header: String) -> HTTPManagerRequest:
+func set_header(new_header: String) -> HTTPManagerRequest:
 	return super(new_header)
 
 ## Sets accept header as a MIME type. If you need more types, use
 ## [method add_header] instead.
 func accept(type: MIME.Type, attributes := {}) -> HTTPManagerRequest:
-	add_header(MIME.type_to_accept(type, attributes))
+	set_header(MIME.type_to_accept(type, attributes))
 	return self
 
 ## Sets accept header as JSON.
 func accept_json() -> HTTPManagerRequest:
-	add_header(MIME.type_to_accept(MIME.Type.JSON))
+	set_header(MIME.type_to_accept(MIME.Type.JSON))
 	return self
 
 ## Sets accept header as XML.
 func accept_xml() -> HTTPManagerRequest:
-	add_header(MIME.type_to_accept(MIME.Type.XML))
+	set_header(MIME.type_to_accept(MIME.Type.XML))
 	return self
 
 ## Sets body. [HTTPManager] uses [method MIME.var_to_string] to convert it.
@@ -235,6 +243,8 @@ func set_url_params(new_params: Dictionary) -> Error:
 	var subpath := "/".join(parsed_parts)
 	if not subpath.begins_with("/"):
 		push_error("Route must start with '/'.")
+		valid = false
+		return FAILED
 	parsed_url.path += subpath
 	parsed_url.set_query(route.client.query_string_from_dict(new_params))
 	

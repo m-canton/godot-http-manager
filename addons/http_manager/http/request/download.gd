@@ -59,7 +59,7 @@ func complete(response: HTTPManagerResponse) -> void:
 
 #region Chain Methods
 ## See [method HTTPManagerStream].
-func add_header(new_header: String) -> HTTPManagerDownload:
+func set_header(new_header: String) -> HTTPManagerDownload:
 	return super(new_header)
 
 ## Requests content encoding gzip.

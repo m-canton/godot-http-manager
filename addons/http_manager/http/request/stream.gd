@@ -5,10 +5,11 @@ class_name HTTPManagerStream extends RefCounted
 var headers: PackedStringArray
 ## Body.
 var body
-var _body_buffer: PackedByteArray
+var _mimetype := MIME.Type.NONE
+var _attributes := {}
 
-## Adds a new header. It replaces the value if it already exists.
-func add_header(new_header: String) -> HTTPManagerStream:
+## Adds a new header. It change the value if it already exists.
+func set_header(new_header: String) -> HTTPManagerStream:
 	var header_name := new_header.get_slice(":", 0) + ":"
 	
 	var i := headers.size() - 1
@@ -30,3 +31,17 @@ func get_header(header_name: String) -> String:
 		if h.begins_with(header_name):
 			return h.substr(header_name.length()).strip_edges()
 	return ""
+
+## Returns body as [PackedByteArray].
+func get_body_as_buffer() -> PackedByteArray:
+	if body is PackedByteArray:
+		return body
+	
+	return MIME.var_to_buffer(body, _mimetype, _attributes)
+
+## Returns body as [String].
+func get_body_as_string() -> String:
+	if body is String:
+		return body
+	
+	return MIME.var_to_string(body, _mimetype, _attributes)

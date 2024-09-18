@@ -33,13 +33,16 @@ var _current_request: HTTPManagerRequest
 func _init(parent: HTTPManagerAPIGroup) -> void:
 	_weak_parent = weakref(parent)
 
-#region Protected Methods
-func _oauth2_check() -> bool:
-	return false
 
+#region Virtual Methods
 ## Returns prefix.
 func _prefix() -> String:
 	return ""
+#endregion
+
+#region Protected Methods
+func _oauth2_check() -> bool:
+	return false
 
 func _validate(data: Array) -> Dictionary:
 	var dict := {}
@@ -48,7 +51,7 @@ func _validate(data: Array) -> Dictionary:
 			dict[value[1]] = value[2]
 	return dict
 
-func _rule(key: String, value, default_value, rules := []) -> Array:
+func _rule(key: String, value, default_value, _rules := []) -> Array:
 	if value == default_value:
 		return [false, key]
 	return [true, key, value]
@@ -104,7 +107,15 @@ func _get_routes_dir() -> String:
 
 func create_route(path: String, method: HTTPClient.Method) -> HTTPManagerRoute:
 	if _weak_parent:
+		var p := _prefix()
+		if p != "":
+			if path == "":
+				path = p
+			elif "./#".contains(path[0]):
+				path = p + path
+			else:
+				path = p + "/" + path
 		return (_weak_parent.get_ref() as HTTPManagerAPIGroup) \
-				.create_route(_prefix().path_join(path), method)
+				.create_route(path, method)
 	return null
 #endregion
