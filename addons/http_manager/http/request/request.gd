@@ -24,6 +24,8 @@ enum Status {
 
 ## Route resource.
 var route: HTTPManagerRoute
+## Service
+var service: HTTPManagerService
 ## Overrides route priority. See [HTTPManagerRoute.priority].
 var priority := -1
 ## Status.
